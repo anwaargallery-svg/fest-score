@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Anwariyya</title>
+    <link rel="icon" type="image/png" href="../../../assets/images/image.png">
+    
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; 
+                   script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net; 
+                   style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; 
+                   img-src 'self' data:; 
+                   font-src 'self' https://cdn.jsdelivr.net;
+                   connect-src 'self';">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- SheetJS for parsing Excel/CSV files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- HTML5 QR Code Scanner -->
+    <script defer src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
+    <link rel="stylesheet" href="admin.css">
+    <script defer src="admin.js"></script>
+</head>
+<body>
+
+    <!-- Admin Login Overlay -->
+    <div id="adminLoginOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-dark d-flex justify-content-center align-items-center" style="z-index: 9999;">
+        <div class="card shadow-lg border-0" style="width: 100%; max-width: 400px;">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-shield-lock me-2"></i>Admin Dashboard Access</h5>
+            </div>
+            <div class="card-body p-4">
+                <div id="adminLoginError" class="alert alert-danger" style="display: none;">Incorrect password!</div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Master Password</label>
+                    <input type="password" id="adminPasswordInput" class="form-control" placeholder="Enter password" autocomplete="current-password">
+                </div>
+                <button type="button" id="adminLoginBtn" class="btn btn-primary w-100 fw-bold">Access Dashboard</button>
+                <div class="text-center mt-3">
+                    <a href="../../../index.html" class="text-decoration-none text-muted small"><i class="bi bi-arrow-left me-1"></i>Return to Website</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Navbar -->
+    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="#">Anwariyya Admin</a>
+        
+        <!-- Mobile Menu Toggle Button -->
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation" style="right: 15px; top: 10px; z-index: 1050;">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="navbar-nav w-100 d-none d-md-block">
+            <div class="nav-item text-nowrap text-end pe-4">
+                <a class="nav-link px-3 text-info d-inline-block" href="#" data-bs-toggle="modal" data-bs-target="#qrScannerModal"><i class="bi bi-qr-code-scan"></i> Scan QR</a>
+                <a class="nav-link px-3 text-white d-inline-block" href="../../../index.html"><i class="bi bi-box-arrow-left"></i> Back to Home</a>
+                <a class="nav-link px-3 text-danger d-inline-block border-start border-secondary ms-2 ps-3" href="#" id="adminLogoutBtn"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            
+            <!-- Sidebar Navigation -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column mb-auto" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab" aria-controls="dashboard" aria-selected="true" style="cursor: pointer;">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab" aria-controls="students" aria-selected="false" style="cursor: pointer;">
+                                <i class="bi bi-people"></i> Manage Students
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="admissions-tab" data-bs-toggle="tab" data-bs-target="#admissions" type="button" role="tab" aria-controls="admissions" aria-selected="false" style="cursor: pointer;">
+                                <i class="bi bi-file-earmark-person"></i> Admissions
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="news-tab" data-bs-toggle="tab" data-bs-target="#news" type="button" role="tab" aria-controls="news" aria-selected="false" style="cursor: pointer;">
+                                <i class="bi bi-newspaper"></i> News & Events
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="messaging-tab" data-bs-toggle="tab" data-bs-target="#messaging" type="button" role="tab" aria-controls="messaging" aria-selected="false" style="cursor: pointer;">
+                                <i class="bi bi-chat-left-text"></i> Messaging
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="results-tab" data-bs-toggle="tab" data-bs-target="#results" type="button" role="tab" aria-controls="results" aria-selected="false" style="cursor: pointer;">
+                                <i class="bi bi-journal-check"></i> Results Control
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="subjects-tab" data-bs-toggle="tab" data-bs-target="#subjects" type="button" role="tab" aria-controls="subjects" aria-selected="false" style="cursor: pointer;">
+                                <i class="bi bi-book"></i> Manage Subjects
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="gallery-tab" data-bs-toggle="tab" data-bs-target="#gallery" type="button" role="tab" aria-controls="gallery" aria-selected="false" style="cursor: pointer;">
+                                <i class="bi bi-images"></i> Gallery Uploads
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="content-tab" data-bs-toggle="tab" data-bs-target="#sitecontent" type="button" role="tab" aria-controls="sitecontent" aria-selected="false" style="cursor: pointer;">
+                                <i class="bi bi-file-earmark-text"></i> Site Content
+                            </a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" id="scoreboard-tab" data-bs-toggle="tab" data-bs-target="#scoreboardControl" type="button" role="tab" aria-controls="scoreboardControl" aria-selected="false" style="cursor: pointer;">
+                                <i class="bi bi-trophy-fill text-warning me-2"></i> Fest Scoreboard
+                            </a>
+                        </li>
+                        <!-- Extra buttons visible only on mobile screens -->
+                        <li class="nav-item d-md-none border-top mt-3 pt-3">
+                            <a class="nav-link text-info" href="#" data-bs-toggle="modal" data-bs-target="#qrScannerModal">
+                                <i class="bi bi-qr-code-scan"></i> Scan QR Code
+                            </a>
+                        </li>
+                        <li class="nav-item d-md-none">
+                            <a class="nav-link text-danger" href="#" id="adminLogoutBtnMobile">
+                                <i class="bi bi-box-arrow-right"></i> Logout (Back to Home)
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Dashboard Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                
+                <div class="tab-content" id="adminContentTabs">
+                    
+                    <!-- Dashboard Tab -->
+                    <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab" tabindex="0">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-2 mb-4 border-bottom">
+                            <h1 class="h2 fw-bold">Dashboard Overview</h1>
+                            <div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#changeAdminPasswordModal"><i class="bi bi-key me-1"></i> Change Password</button>
+                            </div>
+                        </div>
+
+                        <!-- Analytics Overview Cards -->
+                        <div class="row g-4 mb-5">
+                            <div class="col-12 col-sm-6 col-xl">
+                                <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
+                                    <div class="card-body">
+                                        <h6 class="text-muted fw-bold text-uppercase mb-2" style="font-size: 0.8rem;">Total Students</h6>
+                                        <h2 class="mb-0 fw-bold counter-value" id="totalStudentsCount" data-target="0">0</h2>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl">
+                                <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
+                                    <div class="card-body">
+                                        <h6 class="text-muted fw-bold text-uppercase mb-2" style="font-size: 0.8rem;">New Admissions</h6>
+                                        <h2 class="mb-0 fw-bold counter-value" id="newAdmissionsCount" data-target="0">0</h2>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl">
+                                <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
+                                    <div class="card-body">
+                                        <h6 class="text-muted fw-bold text-uppercase mb-2" style="font-size: 0.8rem;">Results Published</h6>
+                                        <h2 class="mb-0 fw-bold counter-value" id="resultsPublishedCount" data-target="0">0</h2>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl">
+                                <div class="card shadow-sm border-0 border-start border-warning border-4 h-100">
+                                    <div class="card-body">
+                                        <h6 class="text-muted fw-bold text-uppercase mb-2" style="font-size: 0.8rem;">Pending Admissions</h6>
+                                        <h2 class="mb-0 fw-bold counter-value" id="pendingAdmissionsCount" data-target="0">0</h2>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl">
+                                <div class="card shadow-sm border-0 border-start border-danger border-4 h-100">
+                                    <div class="card-body">
+                                        <h6 class="text-muted fw-bold text-uppercase mb-2" style="font-size: 0.8rem;">Failed Students</h6>
+                                        <h2 class="mb-0 fw-bold counter-value" id="failedStudentsCount" data-target="0">0</h2>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity Table -->
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="mb-0 fw-bold">Recent Admission Applications</h5>
+                            </div>
+                            <div class="card-body p-0 table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">App ID</th>
+                                            <th>Applicant Name</th>
+                                            <th>Course</th>
+                                            <th>Date Applied</th>
+                                            <th>Status</th>
+                                            <th class="text-end pe-4">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentAdmissionsBody">
+                                        <tr class="placeholder-glow">
+                                            <td class="ps-4"><span class="placeholder col-8"></span></td>
+                                            <td><span class="placeholder col-10"></span></td>
+                                            <td><span class="placeholder col-6"></span></td>
+                                            <td><span class="placeholder col-8"></span></td>
+                                            <td><span class="placeholder col-6"></span></td>
+                                            <td class="text-end pe-4">
+                                                <span class="placeholder col-2"></span> <span class="placeholder col-2"></span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Enrollment Settings -->
+                        <div class="card shadow-sm border-0 mb-4 border-top border-info border-4">
+                            <div class="card-body">
+                                <h5 class="mb-3 text-info fw-bold"><i class="bi bi-gear-fill me-2"></i>Enrollment Settings</h5>
+                                <form id="enrollmentSettingsForm">
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-5">
+                                            <label class="form-label fw-semibold">Starting Enrollment Prefix</label>
+                                            <input type="text" class="form-control" id="enrollPrefixInput" placeholder="e.g. 2026" required>
+                                            <div class="form-text">e.g., 2026</div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold">Starting Sequence No.</label>
+                                            <input type="number" class="form-control" id="enrollSequenceInput" placeholder="e.g. 1" min="1" required>
+                                            <div class="form-text">e.g., 100 &rarr; 100, 101...</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button type="submit" class="btn btn-info text-white fw-bold w-100"><i class="bi bi-save me-1"></i> Save Settings</button>
+                                        </div>
+                                        <div class="col-12 mt-2">
+                                            <div class="form-text text-muted"><i class="bi bi-info-circle me-1"></i>New enrollments will strictly be 8 digits: <strong>[Prefix][Number]</strong> (e.g., <span id="enrollPreviewText">20260001</span>).</div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Backup & Restore -->
+                        <div class="card shadow-sm border-0 mb-4 border-top border-secondary border-4">
+                            <div class="card-body">
+                                <h5 class="mb-3 text-secondary fw-bold"><i class="bi bi-database-fill-down me-2"></i>Backup & Restore</h5>
+                                <p class="text-muted small">Download a full backup of all site data, or restore the site from a previously saved backup file. Restoring will overwrite all current data.</p>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <button id="backupDataBtn" class="btn btn-secondary w-100 fw-bold"><i class="bi bi-download me-2"></i>Backup All Site Data</button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <form id="restoreDataForm">
+                                            <label for="restoreDataInput" class="btn btn-outline-secondary w-100 fw-bold"><i class="bi bi-upload me-2"></i>Restore from Backup</label>
+                                            <input type="file" id="restoreDataInput" accept=".json" class="d-none">
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Danger Zone -->
+                        <div class="card shadow-sm border-0 mb-4 border-top border-danger border-4">
+                            <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                <div>
+                                    <h5 class="mb-1 text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Danger Zone</h5>
+                                    <p class="text-muted small mb-0">Permanently delete all site data including students, admissions, results, and gallery images.</p>
+                                </div>
+                                <button id="resetSiteBtn" class="btn btn-danger fw-bold px-4" data-bs-toggle="modal" data-bs-target="#resetDataModal"><i class="bi bi-trash3-fill me-1"></i> Reset All Data</button>
+                            </div>
+                        </div>
+                    </div> <!-- End Dashboard Tab -->
+
+                    <!-- Manage Students Tab -->
+                    <div class="tab-pane fade" id="students" role="tabpanel" aria-labelledby="students-tab" tabindex="0">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-2 mb-4 border-bottom">
+                            <h1 class="h2 fw-bold">Manage Students</h1>
+                            <div>
+                                <button class="btn btn-sm btn-outline-info me-2" id="downloadStudentTemplateBtn"><i class="bi bi-file-earmark-spreadsheet"></i> Download Template</button>
+                                <button class="btn btn-sm btn-success me-2" data-bs-toggle="modal" data-bs-target="#uploadStudentsModal"><i class="bi bi-cloud-upload"></i> Bulk Upload</button>
+                                <button class="btn btn-sm btn-outline-secondary" id="exportStudentDataBtn"><i class="bi bi-file-earmark-arrow-down"></i> Export All</button>
+                                <button class="btn btn-sm btn-secondary me-2" data-bs-toggle="modal" data-bs-target="#customExportModal"><i class="bi bi-sliders"></i> Custom Export</button>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#studentModal"><i class="bi bi-plus-lg"></i> Add Student</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Search and Filter Bar -->
+                        <div class="row mb-3 g-2">
+                            <div class="col-12 col-md-6">
+                                <input type="text" class="form-control" id="studentSearchInput" placeholder="Search by Name or Enroll Number...">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <select class="form-select" id="studentCourseFilter">
+                                    <option value="">All Courses</option>
+                                    <option value="Hifz">Hifz</option>
+                                    <option value="Shareeath">Shareeath</option>
+                                    <option value="Muthawal">Muthawal</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-2">
+                                <button class="btn btn-outline-secondary w-100" id="studentFilterBtn"><i class="bi bi-filter"></i> Filter</button>
+                            </div>
+                        </div>
+
+                        <!-- Students Directory Table -->
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-body p-0 table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">Enroll No.</th>
+                                            <th>Student Name</th>
+                                            <th>Course & Year</th>
+                                            <th>Contact Number</th>
+                                            <th>Status</th>
+                                            <th class="text-end pe-4">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="studentsTableBody">
+                                        <tr class="placeholder-glow">
+                                            <td class="ps-4"><span class="placeholder col-8"></span></td>
+                                            <td><span class="placeholder col-10"></span></td>
+                                            <td><span class="placeholder col-8"></span></td>
+                                            <td><span class="placeholder col-7"></span></td>
+                                            <td><span class="placeholder col-6"></span></td>
+                                            <td class="text-end pe-4">
+                                                <span class="placeholder col-2"></span> <span class="placeholder col-2"></span> <span class="placeholder col-2"></span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admissions Tab -->
+                    <div class="tab-pane fade" id="admissions" role="tabpanel" aria-labelledby="admissions-tab" tabindex="0">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-2 mb-4 border-bottom">
+                            <h1 class="h2 fw-bold">Admissions Review</h1>
+                            <div class="form-check form-switch fs-5">
+                                <input class="form-check-input" type="checkbox" role="switch" id="toggleAdmissionsBtn" checked style="cursor: pointer;">
+                                <label class="form-check-label fw-bold text-success" for="toggleAdmissionsBtn">Admissions Open</label>
+                            </div>
+                        </div>
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="mb-0 fw-bold">Admissions List</h5>
+                            </div>
+                            <div class="card-body p-0 table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">App ID</th>
+                                            <th>Applicant Name</th>
+                                            <th>Course</th>
+                                            <th>Date Applied</th>
+                                            <th>Status</th>
+                                            <th class="text-end pe-4">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admissionsTableBody">
+                                        <tr class="placeholder-glow">
+                                            <td class="ps-4"><span class="placeholder col-8"></span></td>
+                                            <td><span class="placeholder col-10"></span></td>
+                                            <td><span class="placeholder col-6"></span></td>
+                                            <td><span class="placeholder col-8"></span></td>
+                                            <td><span class="placeholder col-6"></span></td>
+                                            <td class="text-end pe-4">
+                                                <span class="placeholder col-2"></span> <span class="placeholder col-2"></span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="text-end mb-4">
+                            <button class="btn btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#addAdmissionModal"><i class="bi bi-file-earmark-plus me-1"></i> Add Admission</button>
+                        </div>
+                    </div>
+
+                    <!-- News & Events Tab -->
+                    <div class="tab-pane fade" id="news" role="tabpanel" aria-labelledby="news-tab" tabindex="0">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-2 mb-4 border-bottom">
+                            <h1 class="h2 fw-bold">Manage News & Events</h1>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="card shadow-sm border-0 mb-4">
+                                    <div class="card-header bg-white py-3"><h5 class="mb-0 fw-bold">Published Items</h5></div>
+                                    <div class="card-body p-0 table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="table-light"><tr><th class="ps-4">Title</th><th>Category</th><th>Date</th><th class="text-end pe-4">Actions</th></tr></thead>
+                                            <tbody id="newsEventsTableBody">
+                                                <!-- News items will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="card shadow-sm border-0 p-4">
+                                    <h5 class="mb-3 fw-bold" id="newsFormTitle">Publish New Item</h5>
+                                    <form id="newsEventForm">
+                                        <input type="hidden" id="newsItemId">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Title</label>
+                                            <input type="text" class="form-control" id="newsItemTitle" placeholder="Enter title" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Category</label>
+                                            <select class="form-select" id="newsItemCategory"><option value="General" selected>General Notice</option><option value="Event">Event</option><option value="Achievement">Achievement</option></select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Content</label>
+                                            <textarea class="form-control" id="newsItemContent" rows="5" placeholder="Enter the full content of the announcement..." required></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary fw-bold w-100" id="publishNewsBtn"><i class="bi bi-send-plus me-2"></i>Publish</button>
+                                        <button type="button" class="btn btn-outline-secondary w-100 mt-2" id="cancelNewsEditBtn" style="display: none;">Cancel Edit</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Messaging Tab -->
+                    <div class="tab-pane fade" id="messaging" role="tabpanel" aria-labelledby="messaging-tab" tabindex="0">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-2 mb-4 border-bottom">
+                            <h1 class="h2 fw-bold">Send Message to Students</h1>
+                        </div>
+                        <div class="card shadow-sm border-0 mb-4 p-4">
+                            <form id="sendMessageForm">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Recipient</label>
+                                    <select class="form-select" id="messageRecipient" required>
+                                        <option value="all" selected>All Students (Broadcast)</option>
+                                        <!-- Student options will be loaded here -->
+                                    </select>
+                                    <div class="form-text">Select 'All Students' to send a message to everyone, or choose a specific student.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Subject</label>
+                                    <input type="text" class="form-control" id="messageSubject" placeholder="Enter message subject" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Message Body</label>
+                                    <textarea class="form-control" id="messageBody" rows="6" placeholder="Type your message here..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary fw-bold" id="sendMessageBtn">
+                                    <i class="bi bi-send me-2"></i>Send Message
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-white py-3"><h5 class="mb-0 fw-bold">Sent Messages History</h5></div>
+                            <div class="card-body p-0 table-responsive">
+                                <table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th class="ps-4">Date</th><th>Recipient</th><th>Subject</th><th>Read By</th></tr></thead><tbody id="sentMessagesHistory"></tbody></table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Control Tab -->
+                    <div class="tab-pane fade" id="results" role="tabpanel" aria-labelledby="results-tab" tabindex="0">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-2 mb-4 border-bottom">
+                            <h1 class="h2 fw-bold">Results Control</h1>
+                            <div class="form-check form-switch fs-5">
+                                <input class="form-check-input" type="checkbox" role="switch" id="toggleTopRanksBtn" style="cursor: pointer;">
+                                <label class="form-check-label fw-bold text-success" for="toggleTopRanksBtn">Top Ranks Visible</label>
+                            </div>
+                        </div>
+                        <div class="card shadow-sm border-0 mb-4 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Upload & Publish Results</h5>
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" id="exportResultsDataBtn"><i class="bi bi-file-earmark-arrow-down"></i> Export Results</button>
+                                    <button type="button" class="btn btn-sm btn-outline-info" id="downloadResultTemplateBtn"><i class="bi bi-file-earmark-spreadsheet"></i> Download Template</button>
+                                </div>
+                            </div>
+                            <form id="resultUploadForm" enctype="multipart/form-data">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Course / Class (Optional)</label>
+                                        <select class="form-select" name="course" id="bulkResultCourse">
+                                            <option value="">Read from file</option>
+                                            <option value="Hifz">Hifz</option>
+                                            <option value="Shareeath">Shareeath</option>
+                                            <option value="Muthawal">Muthawal</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Year / Class (Optional)</label>
+                                        <input type="text" class="form-control" name="year" id="bulkResultYear" placeholder="e.g. 1, D1, +2">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Result Database File (.xlsx, .csv)</label>
+                                    <input type="file" class="form-control" name="file" id="resultFileInput" accept=".xlsx, .xls, .csv" required>
+                                    <div class="form-text">Upload an Excel file containing columns like EnrollNo, Name, Course, Marks, Status.</div>
+                                </div>
+                                <button type="submit" class="btn btn-success"><i class="bi bi-cloud-arrow-up"></i> Process & Publish Database</button>
+                            </form>
+                            
+                            <!-- Preview Area -->
+                            <div id="uploadPreview" class="mt-4" style="display:none;">
+                                <h6 class="fw-bold mb-2">Data Preview (First 5 Rows):</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm align-middle" id="previewTable"></table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Delete Results Card -->
+                        <div class="card shadow-sm border-0 mb-4 p-4 border-top border-danger border-4">
+                            <h5 class="mb-3 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Class Results</h5>
+                            <p class="text-muted small">Remove all published results for a specific course and year.</p>
+                            <form id="deleteResultsForm">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Course / Class *</label>
+                                        <select class="form-select" id="deleteResultCourse" required>
+                                            <option value="" selected disabled>Select Course</option>
+                                            <option value="Hifz">Hifz</option>
+                                            <option value="Shareeath">Shareeath</option>
+                                            <option value="Muthawal">Muthawal</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Year / Class (Optional)</label>
+                                        <input type="text" class="form-control" id="deleteResultYear" placeholder="e.g. 1, D1, +2">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-danger"><i class="bi bi-trash-fill me-1"></i> Delete Results</button>
+                            </form>
+                        </div>
+
+                        <!-- Published Results List -->
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="mb-0 fw-bold">Published Results List</h5>
+                            </div>
+                            <div class="card-body p-0 table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">Enroll No.</th>
+                                            <th>Student Name</th>
+                                            <th>Course</th>
+                                            <th>Year/Class</th>
+                                            <th class="text-end pe-4">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="resultsTableBody">
+                                        <tr class="placeholder-glow">
+                                            <td class="ps-4"><span class="placeholder col-8"></span></td>
+                                            <td><span class="placeholder col-10"></span></td>
+                                            <td><span class="placeholder col-6"></span></td>
+                                            <td><span class="placeholder col-4"></span></td>
+                                            <td class="text-end pe-4"><span class="placeholder col-2"></span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manage Subjects Tab -->
+                    <div class="tab-pane fade" id="subjects" role="tabpanel" aria-labelledby="subjects-tab" tabindex="0">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-2 mb-4 border-bottom">
+                            <h1 class="h2 fw-bold">Manage Class Subjects</h1>
+                        </div>
+
+                        <!-- Manage Class Subjects Card -->
+                        <div class="card shadow-sm border-0 mb-4 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="mb-0">Class Subjects Configuration</h5>
+                                    <p class="text-muted small mb-0 mt-1">Assign subjects to classes to dynamically generate accurate result templates.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4 pb-4 border-bottom">
+                                <h6 class="fw-bold text-primary">1. Master Subjects Pool</h6>
+                                <form id="masterSubjectForm" class="d-flex gap-2 mb-3">
+                                    <input type="text" class="form-control" id="newMasterSubject" placeholder="Enter subject name (e.g. Quran, Arabic, English)" required>
+                                    <button type="submit" class="btn btn-success text-nowrap"><i class="bi bi-plus-lg"></i> Add Subject</button>
+                                </form>
+                                <div id="masterSubjectsList" class="d-flex flex-wrap gap-2">
+                                    <!-- Dynamically loaded master subjects -->
+                                    <span class="text-muted small">No subjects added yet.</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <h6 class="fw-bold text-primary">2. Assign Subjects to Class</h6>
+                                <form id="subjectAssignForm">
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold">Course *</label>
+                                            <select class="form-select" id="subjectAssignCourse" required>
+                                                <option value="" selected disabled>Select Course</option>
+                                                <option value="Hifz">Hifz</option>
+                                                <option value="Shareeath">Shareeath</option>
+                                                <option value="Muthawal">Muthawal</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold">Year/Class *</label>
+                                            <input type="text" class="form-control" id="subjectAssignYear" placeholder="e.g. 1, 2, D1" required>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label fw-semibold">Select Subjects *</label>
+                                            <div id="subjectCheckboxes" class="p-3 border rounded bg-light row g-2 m-0">
+                                                <div class="text-muted small p-0">Please add subjects to the master pool first.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Save Class Assignment</button>
+                                </form>
+                            </div>
+
+                            <div class="mt-4 pt-3 border-top">
+                                <h6 class="fw-bold mb-3">Current Subject Assignments</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Course</th>
+                                                <th>Year/Class</th>
+                                                <th>Subjects</th>
+                                                <th class="text-end">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="subjectAssignmentsBody">
+                                            <tr><td colspan="4" class="text-center text-muted">No subjects assigned.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gallery Uploads Tab -->
+                    <div class="tab-pane fade" id="gallery" role="tabpanel" aria-labelledby="gallery-tab" tabindex="0">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-2 mb-4 border-bottom">
+                            <h1 class="h2 fw-bold">Gallery Uploads</h1>
+                        </div>
+                        <div class="card shadow-sm border-0 mb-4 p-4">
+                            <h5 class="mb-3">Upload New Images</h5>
+                            <form id="galleryUploadForm" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Select Category</label>
+                                    <select class="form-select" id="galleryCategory" required>
+                                        <option value="atsa">ATSA</option>
+                                        <option value="zuhoor">Zuhoor</option>
+                                        <option value="uroos">Uroos</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Select Images</label>
+                                    <input type="file" class="form-control" id="galleryFileInput" multiple accept="image/*" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-arrow-up"></i> Upload to Gallery</button>
+                            </form>
+                        </div>
+                        
+                        <!-- Manage Existing Gallery Images -->
+                        <div class="card shadow-sm border-0 mb-4 p-4">
+                            <h5 class="mb-3">Manage Gallery Images</h5>
+                            <div class="row g-3" id="adminGalleryGrid">
+                                <!-- Dynamic Gallery Content -->
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <div class="card border-0 shadow-sm h-100 position-relative overflow-hidden rounded-3 placeholder-glow">
+                                        <div class="placeholder w-100" style="height: 150px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Site Content Tab -->
+                    <div class="tab-pane fade" id="sitecontent" role="tabpanel" aria-labelledby="content-tab" tabindex="0">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-2 mb-4 border-bottom">
+                            <h1 class="h2 fw-bold">Site Content Management</h1>
+                        </div>
+                        <div class="card shadow-sm border-0 mb-4 p-4">
+                            <h5 class="mb-4">Update 'About Us' / Learn More Section</h5>
+                            <form id="aboutUsForm" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Section Title</label>
+                                    <input type="text" class="form-control" id="aboutTitleInput" placeholder="e.g. About Anwariyya">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Subtitle (Lead Text)</label>
+                                    <input type="text" class="form-control" id="aboutSubtitleInput" placeholder="Short impactful subtitle">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Main Description</label>
+                                    <textarea class="form-control" id="aboutDescInput" rows="6" placeholder="Detailed description of the institution..."></textarea>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">About Image</label>
+                                    <input type="file" class="form-control" id="aboutImageInput" accept="image/*">
+                                    <div class="mt-3">
+                                        <img id="aboutImagePreview" src="../../../assets/images/home.jpg" alt="Preview" style="height: 150px; width: auto; object-fit: cover; border-radius: 8px; border: 2px solid #ddd; display: none;">
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Save Content</button>
+                                    <button type="button" class="btn btn-outline-danger" id="dropAboutUsBtn"><i class="bi bi-trash me-1"></i> Drop Content</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Manage Custom Sections -->
+                        <div class="card shadow-sm border-0 mb-4 p-4 mt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="mb-0">Additional Custom Sections</h5>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addContentModal"><i class="bi bi-plus-lg me-1"></i> Add New Section</button>
+                            </div>
+                            <div class="row g-3" id="adminContentGrid">
+                                <!-- Dynamic items loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fest Scoreboard Management Tab -->
+                    <div class="tab-pane fade" id="scoreboardControl" role="tabpanel" aria-labelledby="scoreboard-tab" tabindex="0">
+                        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-2 mb-4 border-bottom">
+                            <h1 class="h2 fw-bold"><i class="bi bi-trophy-fill text-warning me-2"></i>Fest Scoreboard Control</h1>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="../../../scoreboard.html" target="_blank" class="btn btn-dark btn-sm fw-bold"><i class="bi bi-arrows-fullscreen text-warning me-1"></i> Open TV Stage View (No Navbars)</a>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="recalculatePointsBtn"><i class="bi bi-arrow-repeat me-1"></i> Recalculate Points</button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="resetScoreboardBtn"><i class="bi bi-trash me-1"></i> Reset Scoreboard</button>
+                            </div>
+                        </div>
+
+                        <!-- Fest Configuration & Public Visibility -->
+                        <div class="card shadow-sm border-0 mb-4 p-4 border-top border-warning border-4">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-sliders me-2"></i>Fest General Settings</h5>
+                            <form id="scoreboardSettingsForm">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Fest Title</label>
+                                        <input type="text" class="form-control" id="sbFestTitleInput" placeholder="e.g. ATSA Arts Fest 2026" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Fest Status</label>
+                                        <select class="form-select" id="sbFestStatusSelect">
+                                            <option value="Live">Live (Active Event)</option>
+                                            <option value="Upcoming">Upcoming</option>
+                                            <option value="Completed">Completed</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check form-switch mt-2">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="sbEnableSwitch" checked>
+                                            <label class="form-check-label fw-bold text-dark" for="sbEnableSwitch">Enable & Display Scoreboard on Public Website</label>
+                                            <div class="form-text">When turned on, the Scoreboard section and live standings will be displayed on the home page.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-warning fw-bold text-dark"><i class="bi bi-check-circle-fill me-1"></i> Save Settings</button>
+                            </form>
+                        </div>
+
+                        <!-- Teams / Houses Management Grid -->
+                        <div class="row g-4 mb-4">
+                            <!-- Add/Edit Team Form Card -->
+                            <div class="col-lg-5">
+                                <div class="card shadow-sm border-0 p-4 h-100">
+                                    <h5 class="fw-bold mb-3" id="sbTeamFormTitle"><i class="bi bi-flag-fill me-2 text-success"></i>Add / Edit Team</h5>
+                                    <form id="sbTeamForm">
+                                        <input type="hidden" id="sbTeamId">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Team / House Name *</label>
+                                            <input type="text" class="form-control" id="sbTeamName" placeholder="e.g. Emeralds, Rubies" required>
+                                        </div>
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6">
+                                                <label class="form-label fw-semibold">Team Theme Color</label>
+                                                <input type="color" class="form-control form-control-color w-100" id="sbTeamColor" value="#198754">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label fw-semibold">Icon</label>
+                                                <select class="form-select" id="sbTeamIcon">
+                                                    <option value="bi-trophy-fill">Trophy</option>
+                                                    <option value="bi-award-fill">Medal / Award</option>
+                                                    <option value="bi-star-fill">Star</option>
+                                                    <option value="bi-shield-shaded">Shield</option>
+                                                    <option value="bi-fire">Fire</option>
+                                                    <option value="bi-lightning-fill">Lightning</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Manual Base Points Override (Optional)</label>
+                                            <input type="number" class="form-control" id="sbTeamPoints" placeholder="0" min="0">
+                                            <small class="text-muted">Points automatically update as event results are saved.</small>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-success fw-bold flex-grow-1"><i class="bi bi-plus-lg me-1"></i> Save Team</button>
+                                            <button type="button" class="btn btn-outline-secondary" id="sbTeamCancelBtn" style="display: none;">Cancel</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Teams List Card -->
+                            <div class="col-lg-7">
+                                <div class="card shadow-sm border-0 p-4 h-100">
+                                    <h5 class="fw-bold mb-3"><i class="bi bi-list-stars me-2"></i>Registered Teams / Houses</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Team</th>
+                                                    <th>Icon & Color</th>
+                                                    <th>Total Points</th>
+                                                    <th class="text-end">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="sbTeamsTableBody">
+                                                <tr><td colspan="4" class="text-center text-muted py-3">Loading teams...</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Published Fest Event Results Control Card -->
+                        <div class="card shadow-sm border-0 mb-4 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0"><i class="bi bi-award-fill me-2 text-primary"></i>Fest Event Results</h5>
+                                <button type="button" class="btn btn-primary btn-sm fw-bold" id="openAddResultModalBtn"><i class="bi bi-plus-lg me-1"></i> Add Event Result</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="color: #000000 !important;">Event & Category</th>
+                                            <th>1st Place (Gold)</th>
+                                            <th>2nd Place (Silver)</th>
+                                            <th>3rd Place (Bronze)</th>
+                                            <th class="text-end">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sbResultsTableBody">
+                                        <tr><td colspan="5" class="text-center text-muted py-3">Loading event results...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Student Data Modal (Add/Edit) -->
+    <div class="modal fade" id="studentModal" tabindex="-1" aria-labelledby="studentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold" id="studentModalLabel"><i class="bi bi-person-lines-fill me-2"></i>Student Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="studentDataForm" enctype="multipart/form-data">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="modalStudentOriginalEnroll">
+                        <input type="hidden" id="modalStudentPhotoData">
+                        <h6 class="text-primary border-bottom pb-2 mb-3">Core Details</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Enrollment Number</label>
+                                <input type="text" class="form-control bg-light text-muted fw-bold" id="modalStudentEnroll" required readonly>
+                                <div class="form-text mt-1" style="font-size: 0.75rem;"><i class="bi bi-lock-fill me-1"></i>Auto-generated sequence.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Full Name</label>
+                                <input type="text" class="form-control" id="modalStudentName" placeholder="Student Name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Course</label>
+                                <select class="form-select" id="modalStudentCourse" required>
+                                    <option value="" selected disabled>Select Course</option>
+                                    <option value="Hifz">Hifz</option>
+                                    <option value="Shareeath">Shareeath</option>
+                                    <option value="Muthawal">Muthawal</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Current Year</label>
+                                <input type="number" class="form-control" id="modalStudentYear" placeholder="e.g. 1" min="1" max="10" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Status</label>
+                                <select class="form-select" id="modalStudentStatus">
+                                    <option value="Active" selected>Active</option>
+                                    <option value="Current Student">Current Student</option>
+                                    <option value="Suspended">Suspended</option>
+                                    <option value="Graduated">Graduated</option>
+                                    <option value="Failed">Failed</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Login Password</label>
+                                <input type="text" class="form-control" id="modalStudentPassword" placeholder="Default: 123456">
+                            </div>
+                        </div>
+
+                        <h6 class="text-primary border-bottom pb-2 mt-4 mb-3">Personal & Contact Details</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">House Name</label>
+                                <input type="text" class="form-control" id="modalStudentHouseName" placeholder="House Name">
+                            </div>
+                             <div class="col-md-6">
+                                <label class="form-label fw-semibold">Father's Name</label>
+                                <input type="text" class="form-control" id="modalStudentFather" placeholder="Father's Name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Father's Occupation</label>
+                                <input type="text" class="form-control" id="modalStudentFatherOccupation" placeholder="Father's Occupation">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Mother's Name</label>
+                                <input type="text" class="form-control" id="modalStudentMother" placeholder="Mother's Name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Contact Number</label>
+                                <input type="tel" class="form-control" id="modalStudentContact" placeholder="+91 xxxxx xxxxx">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Email Address</label>
+                                <input type="email" class="form-control" id="modalStudentEmail" placeholder="student@email.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Date of Birth</label>
+                                <input type="date" class="form-control" id="modalStudentDOB">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Aadhar Number</label>
+                                <input type="text" class="form-control" id="modalStudentAadhar" placeholder="Aadhar Number">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Home Address</label>
+                                <textarea class="form-control" id="modalStudentAddress" rows="2" placeholder="Full residential address"></textarea>
+                            </div>
+                        </div>
+
+                        <h6 class="text-primary border-bottom pb-2 mt-4 mb-3">Previous Education Details</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Madrasa (Class 5)</label>
+                                <input type="text" class="form-control" id="modalStudentMadrasa5" placeholder="Madrasa Name (Class 5)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Madrasa (Class 7)</label>
+                                <input type="text" class="form-control" id="modalStudentMadrasa7" placeholder="Madrasa Name (Class 7)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">School Name</label>
+                                <input type="text" class="form-control" id="modalStudentSchool" placeholder="Last attended school">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Dars / College Name</label>
+                                <input type="text" class="form-control" id="modalStudentDars" placeholder="Previous Dars/College">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Learned Kithabs</label>
+                                <input type="text" class="form-control" id="modalStudentKithabs" placeholder="Kithabs learned">
+                            </div>
+                        </div>
+
+                        <h6 class="text-primary border-bottom pb-2 mt-4 mb-3">Photo</h6>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Student Photo (Optional)</label>
+                                <input type="file" class="form-control" id="modalStudentPhoto" accept="image/*">
+                                <div class="mt-3 text-center" id="modalStudentPhotoPreviewContainer" style="display: none;">
+                                    <img id="modalStudentPhotoPreview" src="" class="img-thumbnail" style="max-height: 120px;" alt="Photo Preview">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary fw-bold">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Admission Modal (Admin) -->
+    <div class="modal fade" id="addAdmissionModal" tabindex="-1" aria-labelledby="addAdmissionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="addAdmissionModalLabel"><i class="bi bi-file-earmark-plus me-2"></i>Add Admission Record</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="addAdmissionForm" enctype="multipart/form-data">
+                    <div class="modal-body p-4">
+                        
+                        <h6 class="text-primary border-bottom pb-2">Personal Details</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Applicant Name *</label>
+                                <input type="text" class="form-control" id="admModalName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Date of Birth *</label>
+                                <input type="date" class="form-control" id="admModalDOB" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Gender *</label>
+                                <select class="form-select" id="admModalGender" required>
+                                    <option value="Male" selected>Male (Boys Only)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Blood Group</label>
+                                <select class="form-select" id="admModalBlood">
+                                    <option value="" selected disabled>Select Blood Group</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <h6 class="text-primary border-bottom pb-2 mt-4">Contact Information</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Mobile Number *</label>
+                                <input type="tel" class="form-control" id="admModalPhone" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Email Address</label>
+                                <input type="email" class="form-control" id="admModalEmail">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Father/Guardian Name *</label>
+                                <input type="text" class="form-control" id="admModalGuardian" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Guardian Mobile *</label>
+                                <input type="tel" class="form-control" id="admModalGuardianPhone" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Permanent Address *</label>
+                                <textarea class="form-control" id="admModalAddress" rows="2" required></textarea>
+                            </div>
+                        </div>
+
+                        <h6 class="text-primary border-bottom pb-2 mt-4">Academic & Course Details</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Course Applied For *</label>
+                                <select class="form-select" id="admModalCourse" required>
+                                    <option value="" selected disabled>Select Course</option>
+                                    <option value="Hifz">Hifz</option>
+                                    <option value="Shareeath">Shareeath</option>
+                                    <option value="Muthawal">Muthawal</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Last Exam Passed *</label>
+                                <input type="text" class="form-control" id="admModalLastExam" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Institution Name *</label>
+                                <input type="text" class="form-control" id="admModalInstitution" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Percentage / Grade *</label>
+                                <input type="text" class="form-control" id="admModalGrade" required>
+                            </div>
+                        </div>
+
+                        <h6 class="text-primary border-bottom pb-2 mt-4">Document Uploads</h6>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Applicant Photo</label>
+                                <input type="file" class="form-control" id="admModalPhoto" accept="image/*">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary fw-bold">Submit Application</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Admission Modal (Admin) -->
+    <div class="modal fade" id="viewAdmissionModal" tabindex="-1" aria-labelledby="viewAdmissionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-info text-dark">
+                    <h5 class="modal-title fw-bold" id="viewAdmissionModalLabel"><i class="bi bi-eye me-2"></i>Review Admission Application</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" id="viewAdmissionContent">
+                    <!-- Dynamic content will be injected here via JS -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Scanner Modal -->
+    <div class="modal fade" id="qrScannerModal" tabindex="-1" aria-labelledby="qrScannerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold" id="qrScannerModalLabel"><i class="bi bi-qr-code-scan me-2"></i>Scan QR Code</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <p class="text-muted small mb-3">Point your camera at a Student's or Applicant's QR code to automatically open their profile.</p>
+                    <div id="qr-reader" style="width: 100%; border: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Upload Students Modal -->
+    <div class="modal fade" id="uploadStudentsModal" tabindex="-1" aria-labelledby="uploadStudentsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold" id="uploadStudentsModalLabel"><i class="bi bi-cloud-upload me-2"></i>Bulk Upload Students</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="studentUploadForm">
+                    <div class="modal-body p-4">
+                        <p class="text-muted small mb-4">Upload an Excel (.xlsx) or CSV file containing student records. The template now includes all detailed fields requested during the online Admission process.</p>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Course / Class (Optional)</label>
+                                <select class="form-select" id="bulkStudentCourse">
+                                    <option value="">Read from file</option>
+                                    <option value="Hifz">Hifz</option>
+                                    <option value="Shareeath">Shareeath</option>
+                                    <option value="Muthawal">Muthawal</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Year (Optional)</label>
+                                <input type="number" class="form-control" id="bulkStudentYear" placeholder="e.g. 1" min="1" max="10">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Select File</label>
+                            <input type="file" class="form-control" id="studentFileInput" accept=".xlsx, .xls, .csv" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success fw-bold">Upload & Process</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Custom Content Modal -->
+    <div class="modal fade" id="addContentModal" tabindex="-1" aria-labelledby="addContentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="addContentModalLabel"><i class="bi bi-file-earmark-plus me-2"></i>Add Custom Section</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="addContentForm" enctype="multipart/form-data">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="customContentId">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Section Title *</label>
+                            <input type="text" class="form-control" id="customContentTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Description / Text *</label>
+                            <textarea class="form-control" id="customContentDesc" rows="5" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Image (Optional)</label>
+                            <input type="file" class="form-control" id="customContentImage" accept="image/*">
+                            <img id="customContentImagePreview" src="" style="max-height: 120px; display: none;" class="img-thumbnail mt-2" alt="Image Preview">
+                            <input type="hidden" id="customContentCurrentImageData">
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-2" id="removeCustomContentImageBtn" style="display: none;"><i class="bi bi-trash me-1"></i> Remove Image</button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary fw-bold" id="addContentModalSubmitBtn">Publish Section</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Result Modal -->
+    <div class="modal fade" id="editResultModal" tabindex="-1" aria-labelledby="editResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-info text-dark">
+                    <h5 class="modal-title fw-bold" id="editResultModalLabel"><i class="bi bi-pencil-fill me-2"></i>Edit Student Result</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editResultForm">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="editResultEnrollNo">
+                        <div class="mb-4 p-3 bg-light rounded border">
+                            <h6 class="mb-1 fw-bold" id="editResultStudentName">Student Name</h6>
+                            <small class="text-muted" id="editResultStudentInfo">Enroll No: | Course:</small>
+                        </div>
+                        <div id="editResultFieldsContainer" class="row g-3">
+                            <!-- Dynamic subject fields will be injected here -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-info fw-bold">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Admin Password Modal -->
+    <div class="modal fade" id="changeAdminPasswordModal" tabindex="-1" aria-labelledby="changeAdminPasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold" id="changeAdminPasswordModalLabel"><i class="bi bi-key me-2"></i>Change Master Password</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="changeAdminPasswordForm">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Current Password *</label>
+                            <input type="password" class="form-control" id="adminCurrentPassword" required autocomplete="current-password">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">New Password *</label>
+                            <input type="password" class="form-control" id="adminNewPassword" required autocomplete="new-password">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Confirm New Password *</label>
+                            <input type="password" class="form-control" id="adminConfirmPassword" required autocomplete="new-password">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary fw-bold">Update Password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Data Modal -->
+    <div class="modal fade" id="resetDataModal" tabindex="-1" aria-labelledby="resetDataModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold" id="resetDataModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Reset All Data</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="resetDataForm">
+                    <div class="modal-body p-4">
+                        <div class="alert alert-warning mb-4">
+                            <strong>WARNING:</strong> This will permanently delete ALL data including students, admissions, results, and gallery images. Are you absolutely sure?
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Master Password *</label>
+                            <input type="password" class="form-control" id="resetDataPassword" required placeholder="Enter master password to confirm" autocomplete="current-password">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger fw-bold">Confirm Reset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Student Export Modal -->
+    <div class="modal fade" id="customExportModal" tabindex="-1" aria-labelledby="customExportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-secondary text-white">
+                    <h5 class="modal-title fw-bold" id="customExportModalLabel"><i class="bi bi-sliders me-2"></i>Custom Student Data Export</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Select the fields you want to include in the export. The `EnrollNo` and `Name` fields are always included.</p>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-primary me-2" id="customExportSelectAll">Select All</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="customExportDeselectAll">Deselect All</button>
+                    </div>
+                    <div id="customExportFieldsContainer" class="row g-2 p-3 border rounded bg-light" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Checkboxes will be dynamically inserted here -->
+                        <div class="text-center text-muted">Loading fields...</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary fw-bold" id="customExportDownloadBtn"><i class="bi bi-download me-2"></i>Download Export</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add / Edit Fest Event Result Modal -->
+    <div class="modal fade" id="festResultModal" tabindex="-1" aria-labelledby="festResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold" id="festResultModalLabel"><i class="bi bi-trophy-fill text-warning me-2"></i>Publish Fest Event Result</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="festResultForm">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="festResultId">
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-7">
+                                <label class="form-label fw-semibold">Event Name *</label>
+                                <input type="text" class="form-control" id="festResultEventName" placeholder="e.g. Quran Recitation, Elocution, Calligraphy" required>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Category *</label>
+                                <select class="form-select" id="festResultCategory" required>
+                                    <option value="Super Senior">Super Senior</option>
+                                    <option value="Senior">Senior</option>
+                                    <option value="Junior">Junior</option>
+                                    <option value="Sub-Junior">Sub-Junior</option>
+                                    <option value="General">General</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 1st Rank (Gold) -->
+                        <div class="p-3 bg-warning-subtle border border-warning rounded-3 mb-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-trophy-fill text-warning me-1"></i>1st Rank Winner(s) (Gold)</h6>
+                                <button type="button" class="btn btn-sm btn-warning text-dark fw-bold" id="add1stWinnerBtn"><i class="bi bi-plus-circle me-1"></i>Add 1st Winner</button>
+                            </div>
+                            <div id="fest1stWinnersContainer" class="d-flex flex-column gap-2">
+                                <!-- Winner rows rendered dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- 2nd Rank (Silver) -->
+                        <div class="p-3 bg-secondary-subtle border border-secondary rounded-3 mb-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-award-fill text-secondary me-1"></i>2nd Rank Winner(s) (Silver)</h6>
+                                <button type="button" class="btn btn-sm btn-secondary text-white fw-bold" id="add2ndWinnerBtn"><i class="bi bi-plus-circle me-1"></i>Add 2nd Winner</button>
+                            </div>
+                            <div id="fest2ndWinnersContainer" class="d-flex flex-column gap-2">
+                                <!-- Winner rows rendered dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- 3rd Rank (Bronze) -->
+                        <div class="p-3 bg-danger-subtle border border-danger rounded-3 mb-3">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-award text-danger me-1"></i>3rd Rank Winner(s) (Bronze)</h6>
+                                <button type="button" class="btn btn-sm btn-danger text-white fw-bold" id="add3rdWinnerBtn"><i class="bi bi-plus-circle me-1"></i>Add 3rd Winner</button>
+                            </div>
+                            <div id="fest3rdWinnersContainer" class="d-flex flex-column gap-2">
+                                <!-- Winner rows rendered dynamically -->
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary fw-bold"><i class="bi bi-check-lg me-1"></i> Save Event Result</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>

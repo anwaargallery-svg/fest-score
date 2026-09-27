@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <link rel="icon" type="image/x-icon" href="/assets/images/image.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anwariyya</title>
+    <link rel="stylesheet"  href="assets/style.css" >
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; 
+                   script-src 'self' 'unsafe-inline' https://code.jquery.com https://cdn.jsdelivr.net https://unpkg.com; 
+                   style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://unpkg.com; 
+                   img-src 'self' data:; 
+                   font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com;
+                   connect-src 'self';">
+    <script defer src="assets/script.js"></script>
+    <script defer src="https://code.jquery.com/jquery-4.0.0.js" integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U=" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- AOS CSS -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <style>
+      /* Styles for the home screen slider */
+      #home-slider .slide {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        opacity: 0;
+        transition: opacity 1.5s ease-in-out;
+        z-index: 1;
+      }
+      #home-slider .slide.active {
+        opacity: 1;
+        z-index: 1;
+      }
+    </style>
+</head>
+<body class="pt-5">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
+        
+  <div class="container-fluid">
+  <div class="logo_name mb-0">
+    <div class="lo">  <img  class="logo" src="assets/images/image.png" alt=""></div>
+            <div>  <h1 >Anwariyya Arabic College </h1> </div>
+            <h6>www.anwariyya.in</h6>
+        </div>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse justify-content-end navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="#home">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="admission.html">Admission</a>
+        </li>
+       
+        <li class="nav-item">
+          <a class="nav-link" href="#scoreboard"><i class="bi bi-trophy-fill me-1 text-warning"></i>Fest Scoreboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" aria-disabled="true" href="#result">result</a>
+        </li>
+       
+        <li class="nav-item">
+          <a class="nav-link " aria-disabled="true " href="#gallery">gallery</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#contact">Contact</a>
+        </li>
+        
+        <li class="nav-item">
+        <button type="button" data-bs-toggle="modal" data-bs-target="#studentLoginModal" class="btn btn-success btn-lg"> <i class="bi bi-person-circle"></i> student portal </button>
+        </li>
+    </ul>
+      
+    </div>
+  </div>
+</nav>
+
+<!-- Student Login Modal -->
+<div class="modal fade" id="studentLoginModal" tabindex="-1" aria-labelledby="studentLoginModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title fw-bold" id="studentLoginModalLabel"><i class="bi bi-person-circle me-2"></i>Student Portal Login</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div id="loginMessage" style="display: none;"></div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Enrollment Number</label>
+          <input type="text" class="form-control" id="loginEnrollNo" placeholder="e.g. 20262024001">
+        </div>
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Password</label>
+          <input type="password" class="form-control" id="loginPassword" placeholder="Enter password" autocomplete="current-password">
+        </div>
+        <button type="button" id="studentLoginBtn" class="btn btn-success w-100 fw-bold">Login to Portal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- Modern Hero Banner -->
+  <section id="home" class="position-relative d-flex align-items-center justify-content-center" style="min-height: 85vh; background-color: #212529;">
+    <div id="home-slider" class="position-absolute top-0 start-0 w-100 h-100">
+      <div class="slide" style="background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.75)), url('assets/images/homeslide/224A0839.JPG');"></div>
+      <div class="slide" style="background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.75)), url('assets/images/homeslide/WhatsApp Image 2023-08-24 at 11.07.12 AM.jpeg');"></div>
+      <div class="slide" style="background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.75)), url('assets/images/homeslide/WhatsApp Image 2023-08-24 at 11.07.13 AM (1).jpeg');"></div>
+      <div class="slide" style="background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.75)), url('assets/images/homeslide/WhatsApp Image 2023-08-24 at 11.07.13 AM.jpeg');"></div>
+    </div>
+
+    <div class="container text-center text-white position-relative z-1 px-3 mt-4" data-aos="zoom-in" style="z-index: 2;">
+      <img src="assets/images/image.png" alt="Anwariyya Logo" class="mb-4 bg-white rounded-circle p-2 shadow-lg border border-3 border-light" style="width: 150px; height: 150px; object-fit: contain;">
+      <h1 class="display-4 fw-bold mb-3 text-uppercase text-white" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Anwariyya Arabic College</h1>
+      <h4 class="fs-4 fw-light mb-5 text-light" style="letter-spacing: 3px;">ESTABLISHED IN 1969</h4>
+      <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="admission.html" class="btn btn-primary btn-lg px-5 py-3 fw-bold text-uppercase rounded-pill shadow-lg"><i class="bi bi-journal-text me-2"></i> Admission</a>
+        <a href="#about" class="btn btn-outline-light btn-lg px-5 py-3 fw-bold text-uppercase rounded-pill shadow-lg"><i class="bi bi-info-circle me-2"></i> Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- News & Announcements Section -->
+  <section id="news" class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <h2 class="fw-bold fs-2 text-uppercase">News & Announcements</h2>
+            <p class="text-muted">Stay updated with the latest happenings at Anwariyya.</p>
+        </div>
+        <div class="row g-4" id="news-container">
+            <!-- Skeleton Loader -->
+            <div class="col-md-6 col-lg-4 placeholder-glow">
+                <div class="card h-100 shadow-sm border-0"><div class="card-body"><span class="placeholder col-8"></span> <span class="placeholder col-4"></span> <span class="placeholder col-12"></span> <span class="placeholder col-10"></span></div></div>
+            </div>
+            <div class="col-md-6 col-lg-4 placeholder-glow d-none d-md-block">
+                <div class="card h-100 shadow-sm border-0"><div class="card-body"><span class="placeholder col-8"></span> <span class="placeholder col-4"></span> <span class="placeholder col-12"></span> <span class="placeholder col-10"></span></div></div>
+            </div>
+            <div class="col-md-6 col-lg-4 placeholder-glow d-none d-lg-block">
+                <div class="card h-100 shadow-sm border-0"><div class="card-body"><span class="placeholder col-8"></span> <span class="placeholder col-4"></span> <span class="placeholder col-12"></span> <span class="placeholder col-10"></span></div></div>
+            </div>
+        </div>
+    </div>
+  </section>
+
+  <!-- Fest Scoreboard Section -->
+  <section id="scoreboard" class="py-5 text-dark position-relative" style="background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2" data-aos="fade-up">
+        <div class="d-inline-flex align-items-center gap-2 bg-success-subtle text-success px-3 py-1 rounded-pill fw-bold text-uppercase small shadow-sm">
+          <span class="spinner-grow spinner-grow-sm text-danger" role="status" id="scoreboardLiveDot"></span>
+          <span id="scoreboardFestStatusBadge"><i class="bi bi-trophy-fill me-1"></i> Arts Fest Scoreboard</span>
+        </div>
+
+        <div class="d-flex gap-2 ms-auto">
+          <button type="button" class="btn btn-dark btn-sm rounded-pill fw-bold px-3 shadow-sm" id="toggleFullScreenBtn">
+            <i class="bi bi-arrows-fullscreen me-1"></i> Stage View Mode (No Navbars)
+          </button>
+          <a href="scoreboard.html" target="_blank" class="btn btn-outline-dark btn-sm rounded-pill fw-bold px-3 shadow-sm">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Open TV Screen Page
+          </a>
+          <button type="button" class="btn btn-danger btn-sm rounded-pill fw-bold px-3 shadow-sm" id="exitFullScreenBtn" style="display: none;">
+            <i class="bi bi-fullscreen-exit me-1"></i> Exit Stage View
+          </button>
+        </div>
+      </div>
+
+      <div class="text-center mb-4" data-aos="fade-up">
+        <h2 class="fw-bold fs-1 text-uppercase text-dark mb-1" id="festTitleHeader">ATSA Arts Fest 2026</h2>
+        <p class="text-muted mb-0" id="festSubtitle">Live Team Standings & Event Results</p>
+      </div>
+
+      <!-- Team Leaderboard Standings Grid -->
+      <div class="row g-3 justify-content-center mb-5" id="scoreboardTeamsContainer" data-aos="fade-up">
+        <div class="col-12 text-center text-muted py-4">
+          <div class="spinner-border text-success" role="status"></div>
+          <p class="mt-2">Loading Team Standings...</p>
+        </div>
+      </div>
+
+      <!-- Live Event Results Header & Card/Table Views -->
+      <div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4" data-aos="fade-up">
+        <div class="card-header bg-dark text-white p-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-award-fill text-warning me-2"></i>Event Programme Results</h5>
+            <span class="badge bg-warning text-dark me-2 d-none d-sm-inline-flex align-items-center gap-1 badge-live-scroll"><i class="bi bi-arrow-left-right me-1"></i> Live Scroll</span>
+            
+            <!-- Horizontal Navigation Scroll Arrows -->
+            <div class="btn-group btn-group-sm me-2" role="group" id="festScrollNavGroup">
+              <button type="button" class="btn btn-outline-warning" id="festScrollLeftBtn" title="Scroll Left">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              <button type="button" class="btn btn-outline-warning" id="festScrollRightBtn" title="Scroll Right">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+
+            <!-- View Switcher Toggle Buttons -->
+            <div class="btn-group btn-group-sm" role="group">
+              <button type="button" class="btn btn-outline-warning active" id="festViewCardsBtn" title="Card View">
+                <i class="bi bi-grid-fill me-1"></i> Cards
+              </button>
+              <button type="button" class="btn btn-outline-warning" id="festViewTableBtn" title="Table View">
+                <i class="bi bi-table me-1"></i> Table
+              </button>
+            </div>
+          </div>
+          
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Search Bar -->
+            <div class="input-group input-group-sm" style="max-width: 240px;">
+              <span class="input-group-text bg-secondary border-0 text-white"><i class="bi bi-search"></i></span>
+              <input type="text" id="festSearchInput" class="form-control bg-secondary text-white border-0" placeholder="Search event, student, chest...">
+            </div>
+            
+            <!-- Category Filter Buttons -->
+            <div class="btn-group btn-group-sm" role="group" id="festCategoryFilterGroup">
+              <button type="button" class="btn btn-outline-light active" data-filter="all">All</button>
+              <button type="button" class="btn btn-outline-light" data-filter="Super Senior">Super Senior</button>
+              <button type="button" class="btn btn-outline-light" data-filter="Senior">Senior</button>
+              <button type="button" class="btn btn-outline-light" data-filter="Junior">Junior</button>
+              <button type="button" class="btn btn-outline-light" data-filter="Sub-Junior">Sub-Junior</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Event Cards Container (Active Default) -->
+        <div class="card-body p-4 bg-light position-relative" id="festResultsCardsWrapper">
+          <button type="button" class="btn btn-dark rounded-circle shadow position-absolute start-0 top-50 translate-middle-y ms-2 fest-scroll-arrow-btn d-none d-md-flex" id="festFloatingLeftBtn" style="z-index: 10;" title="Scroll Left">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <button type="button" class="btn btn-dark rounded-circle shadow position-absolute end-0 top-50 translate-middle-y me-2 fest-scroll-arrow-btn d-none d-md-flex" id="festFloatingRightBtn" style="z-index: 10;" title="Scroll Right">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          
+          <div class="fest-horizontal-track" id="festResultsCardsContainer">
+            <div class="col-12 text-center text-muted py-5">
+              <div class="spinner-border text-success" role="status"></div>
+              <p class="mt-2">Loading event programme cards...</p>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Table View Container (Optional toggle) -->
+        <div class="card-body p-0" id="festResultsTableWrapper" style="display: none;">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="festResultsTable">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col" class="ps-3" style="width: 25%; color: #000000 !important;">Event & Category</th>
+                  <th scope="col" style="width: 25%;"><span class="badge bg-warning text-dark"><i class="bi bi-trophy-fill me-1"></i>1st Place</span></th>
+                  <th scope="col" style="width: 25%;"><span class="badge bg-secondary"><i class="bi bi-award-fill me-1"></i>2nd Place</span></th>
+                  <th scope="col" style="width: 25%;"><span class="badge bg-danger"><i class="bi bi-award me-1"></i>3rd Place</span></th>
+                </tr>
+              </thead>
+              <tbody id="festResultsTableBody">
+                <tr>
+                  <td colspan="4" class="text-center py-4 text-muted">Loading published event results...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Muthawal Top Ranks Banner -->
+  <section id="muthawalRanksBanner" class="py-5 text-center rounded-4 mx-3 my-4 shadow-lg border border-2 border-warning position-relative overflow-hidden" style="display: none; background: linear-gradient(135deg, #105321 0%, #1a8736 100%);" data-aos="fade-up">
+    <!-- Decorative Background Elements -->
+    <div class="position-absolute top-0 start-0 w-100 h-100" style="background-image: radial-gradient(circle at 15% 50%, rgba(255, 193, 7, 0.15) 0%, transparent 50%), radial-gradient(circle at 85% 30%, rgba(255, 193, 7, 0.15) 0%, transparent 50%); pointer-events: none;"></div>
+    
+    <!-- Side Decorations -->
+    <i class="bi bi-stars position-absolute text-warning d-none d-md-block" style="top: 15%; left: 5%; font-size: 3rem; opacity: 0.4; transform: rotate(-15deg); pointer-events: none;"></i>
+    <i class="bi bi-award-fill position-absolute text-warning d-none d-md-block" style="bottom: 15%; left: 8%; font-size: 5rem; opacity: 0.15; transform: rotate(15deg); pointer-events: none;"></i>
+    <i class="bi bi-stars position-absolute text-warning d-none d-md-block" style="bottom: 20%; right: 5%; font-size: 3.5rem; opacity: 0.4; transform: rotate(20deg); pointer-events: none;"></i>
+    <i class="bi bi-award-fill position-absolute text-warning d-none d-md-block" style="top: 10%; right: 8%; font-size: 5rem; opacity: 0.15; transform: rotate(-15deg); pointer-events: none;"></i>
+    
+    <div class="container position-relative z-1">
+      <div class="mb-4">
+        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold text-uppercase mb-2 shadow-sm" style="letter-spacing: 1px;">Wall of Fame</span>
+        <h2 class="fw-bold text-white display-6 mb-0" style="text-shadow: 1px 2px 4px rgba(0,0,0,0.3);"><i class="bi bi-trophy-fill text-warning me-3" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>Muthawal Top Rankers</h2>
+      </div>
+      <div class="row justify-content-center g-4 mt-2" id="topRanksContainer">
+        <!-- Dynamic Content -->
+        <div class="col-12 text-white-50">
+          <div class="spinner-border text-warning" role="status"></div>
+          <p class="mt-2">Loading top ranks...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Us Section -->
+  <section id="about" class="py-5 bg-white">
+    <div class="container pt-4 pb-2">
+      <div class="row align-items-center gy-4">
+        <div class="col-12 col-md-6 text-center text-md-start pe-md-5" data-aos="fade-right">
+          <h2 class="fw-bold fs-2 text-uppercase mb-3" id="aboutTitle">About Anwariyya</h2>
+          <p class="text-muted lead mb-4" id="aboutSubtitle">Empowering minds with knowledge and moral values since 1969.</p>
+          <p class="text-muted mb-4" id="aboutDescription" style="white-space: pre-wrap;">Anwariyya Arabic College is a premier institution dedicated to the profound study of Arabic language and Islamic sciences. Established in 1969, the college has a rich history of nurturing students and guiding them towards academic excellence and spiritual depth. We offer comprehensive programs such as Hifz, Shareeath, and Muthawal, preparing our graduates (Anwarees) to be knowledgeable and responsible leaders in society.</p>
+          <div class="row g-4 my-4">
+            <div class="col-12">
+              <div class="p-4 rounded-4 text-center bg-primary-subtle border border-primary-subtle shadow-sm">
+                <h2 class="fw-bolder text-primary mb-1" id="statsYears">55+</h2>
+                <p class="text-uppercase fw-semibold text-primary-emphasis mb-0">Years of Excellence</p>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-3 rounded-4 text-center bg-light shadow-sm">
+                <h4 class="fw-bold text-info mb-0" id="statsStudents">500+</h4>
+                <small class="text-muted text-uppercase fw-semibold">Students</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-3 rounded-4 text-center bg-light shadow-sm">
+                <h4 class="fw-bold text-danger mb-0" id="statsAnwarees">1500+</h4>
+                <small class="text-muted text-uppercase fw-semibold">Anwarees</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6" data-aos="fade-left">
+          <div class="position-relative">
+            <img src="assets/images/homeslide/WhatsApp Image 2023-08-24 at 11.07.13 AM (1).jpeg" alt="About Anwariyya" id="aboutImage" class="img-fluid rounded-4 shadow-lg border border-4 border-white w-100" style="object-fit: cover; max-height: 500px;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Dynamic Custom Sections Container -->
+  <div id="dynamicCustomSections"></div>
+  
+  <!-- Courses Section -->
+  <section id="courses" class="py-5">
+    <div class="container pt-3">
+      <div class="text-center mb-5" data-aos="fade-up">
+        <h2 class="fw-bold fs-2 text-uppercase">Our Programs</h2>
+        <p class="text-muted">Explore the comprehensive Islamic and Arabic studies offered at Anwariyya</p>
+      </div>
+      <div class="row g-4 justify-content-center">
+        <!-- Course 1 -->
+        <div class="col-12 col-md-4" data-aos="fade-up" data-aos-delay="100">
+          <div class="card h-100 shadow-sm border-0 rounded-4 text-center p-3 pt-4 hover-lift">
+            <div class="card-body">
+              <i class="bi bi-book text-primary mb-3 d-block" style="font-size: 3rem;"></i>
+              <h4 class="card-title fw-bold">Hifz</h4>
+              <p class="card-text text-muted mb-4">A dedicated program for memorization of the Holy Quran with proper Tajweed.</p>
+              <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">Eligibility: After 3rd Class</span>
+            </div>
+          </div>
+        </div>
+        <!-- Course 2 -->
+        <div class="col-12 col-md-4" data-aos="fade-up" data-aos-delay="200">
+          <div class="card h-100 shadow-sm border-0 rounded-4 text-center p-3 pt-4 hover-lift">
+            <div class="card-body">
+              <i class="bi bi-journal-bookmark text-success mb-3 d-block" style="font-size: 3rem;"></i>
+              <h4 class="card-title fw-bold">Shareeath</h4>
+              <p class="card-text text-muted mb-4">In-depth study of Islamic jurisprudence, Hadith, and advanced Arabic literature.</p>
+              <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">Eligibility: After 7th Class</span>
+            </div>
+          </div>
+        </div>
+        <!-- Course 3 -->
+        <div class="col-12 col-md-4" data-aos="fade-up" data-aos-delay="300">
+          <div class="card h-100 shadow-sm border-0 rounded-4 text-center p-3 pt-4 hover-lift">
+            <div class="card-body">
+              <i class="bi bi-award text-warning mb-3 d-block" style="font-size: 3rem;"></i>
+              <h4 class="card-title fw-bold">Muthawal</h4>
+              <p class="card-text text-muted mb-4">Higher education focusing on specialization in core Islamic sciences and ethics.</p>
+              <span class="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill">Eligibility: After Dars</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="result" class="py-5 bg-light">
+    <div class="container">
+      <div class="text-center mb-5" data-aos="fade-up">
+        <h2 class="fw-bold display-5 text-uppercase text-dark" style="letter-spacing: 2px;">Examination Results</h2>
+        <p class="text-muted fs-5">Check your academic performance securely.</p>
+      </div>
+
+    <div class="row justify-content-center" data-aos="zoom-in">
+      <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+        <div class="p-4 bg-white shadow-sm rounded-3 border">
+          
+          <div class="mb-3" id="enrollInputContainer">
+            <label for="enrollNo" class="form-label fw-semibold">Enroll Number</label>
+            <input type="text" id="enrollNo" class="form-control" placeholder="Enter your enrollment number">
+          </div>
+          
+          <div class="mb-3" id="classSelectContainer" style="display:none;">
+            <label for="classSelect" class="form-label fw-semibold">Select Course</label>
+            <select id="classSelect" class="form-select mb-3">
+              <option value="" selected disabled>Choose Course...</option>
+              <option value="Hifz">Hifz</option>
+              <option value="Shareeath">Shareeath</option>
+              <option value="Muthawal">Muthawal</option>
+            </select>
+            
+            <div id="yearSelectWrapper" style="display:none;">
+              <label for="yearSelect" class="form-label fw-semibold">Select Class</label>
+              <select id="yearSelect" class="form-select">
+                <option value="" selected>All Classes</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3" id="passwordContainer">
+            <label for="password" class="form-label fw-semibold">Password</label>
+            <input type="password" id="password" class="form-control" placeholder="Enter password" autocomplete="current-password">
+          </div>
+          
+          <div class="d-flex flex-wrap gap-3 my-4 justify-content-start">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="searchType" id="studentBase" checked>
+              <label class="form-check-label" for="studentBase">
+                Student Base
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="searchType" id="classBase">
+              <label class="form-check-label" for="classBase">
+                Class Base (Search by Class/Year)
+              </label>
+            </div>
+          </div>
+          
+          <div class="d-grid gap-2">
+            <button type="button" id="searchResultBtn" class="btn btn-primary py-2 fw-bold text-uppercase">Search</button>
+          </div>
+
+          <!-- Result Output Area -->
+          <div id="resultOutput" class="mt-4" style="display:none;">
+              <div class="alert alert-info mb-0" id="resultMessage"></div>
+              <div id="resultDetails" style="display:none;">
+                  <div class="table-responsive mt-3">
+                      <table class="table table-bordered mb-0">
+                          <tbody id="resultTableBody"></tbody>
+                      </table>
+                  </div>
+                  <div class="text-end mt-3">
+                      <button type="button" id="printResultBtn" class="btn btn-dark fw-bold px-4"><i class="bi bi-printer-fill me-2"></i> Print Result</button>
+                  </div>
+              </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section id="gallery" class="py-5">
+  <div class="container-fluid">
+    <h2 class="text-center mb-4" data-aos="fade-up">Gallery</h2>
+    
+    <!-- Gallery Tabs Navigation -->
+    <ul class="nav nav-tabs justify-content-center mb-4" id="galleryTabs" role="tablist" data-aos="fade-up" data-aos-delay="100">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-semibold" id="atsa-tab" data-bs-toggle="tab" data-bs-target="#atsa" type="button" role="tab" aria-controls="atsa" aria-selected="true">ATSA</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="zuhoor-tab" data-bs-toggle="tab" data-bs-target="#zuhoor" type="button" role="tab" aria-controls="zuhoor" aria-selected="false">zuhoor</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="uroos-tab" data-bs-toggle="tab" data-bs-target="#uroos" type="button" role="tab" aria-controls="uroos" aria-selected="false">Uroos</button>
+      </li>
+    </ul>
+
+    <!-- Gallery Tabs Content -->
+    <div class="tab-content" id="galleryTabsContent" data-aos="fade-up" data-aos-delay="200">
+      
+      <!-- ATSA Content -->
+      <div class="tab-pane fade show active" id="atsa" role="tabpanel" aria-labelledby="atsa-tab" tabindex="0">
+        <div class="row g-3" id="gallery-atsa-content">
+          <div class="col-12 col-md-4">
+            <img src="assets/images/1.jpg" alt="" class="img-fluid rounded shadow-sm">
+          </div>
+          <div class="col-12 col-md-4">
+            <img src="assets/images/2.jpg" alt="" class="img-fluid rounded shadow-sm">
+          </div>
+          <div class="col-12 col-md-4">
+            <img src="assets/images/3.jpg" alt="" class="img-fluid rounded shadow-sm">
+          </div>
+        </div>
+      </div>
+
+      <!-- Zuhoor Content -->
+      <div class="tab-pane fade" id="zuhoor" role="tabpanel" aria-labelledby="zuhoor-tab" tabindex="0">
+        <div class="row g-3" id="gallery-zuhoor-content">
+          <div class="col-12 text-center p-5 text-muted"><h5>Zuhoor Gallery Images Coming Soon</h5></div>
+        </div>
+      </div>
+
+      <!-- Uroos Content -->
+      <div class="tab-pane fade" id="uroos" role="tabpanel" aria-labelledby="uroos-tab" tabindex="0">
+        <div class="row g-3" id="gallery-uroos-content">
+          <div class="col-12 text-center p-5 text-muted"><h5>Uroos Gallery Images Coming Soon</h5></div>
+        </div>
+      </div>
+
+    </div>
+  </div> 
+</section>
+
+
+</main>
+
+<footer class="bg-dark text-white pt-5 pb-3 mt-5" id="contact" data-aos="fade-up">
+  <div class="container">
+    <div class="row gy-4">
+      
+      <!-- Branding & Social Column -->
+      <div class="col-12 col-md-5 col-lg-4">
+        <div class="d-flex align-items-center mb-3">
+          <img src="assets/images/image.png" alt="Logo" class="me-2 bg-white rounded-circle p-1" style="width: 55px; height: 55px; object-fit: contain;">
+          <h4 class="mb-0 fw-bold">Anwariyya Arabic College</h4>
+        </div>
+        <p class="text-white-50 small pe-md-4">Empowering minds with knowledge and moral values since 1969. A premier institution for Arabic and Islamic studies.</p>
+        <div class="d-flex gap-2 mt-3">
+          <a href="https://www.facebook.com/search/top?q=Anwariyya%20Arabic%20College" target="_blank" rel="noopener noreferrer" title="Facebook" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-facebook"></i></a>
+          <a href="https://www.instagram.com/anwariyya_arabic_college?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" title="Instagram" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-instagram"></i></a>
+          <a href="https://www.youtube.com/@anwaargallery4338" target="_blank" rel="noopener noreferrer" title="YouTube" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-youtube"></i></a>
+        </div>
+      </div>
+
+      <!-- Quick Links Column -->
+      <div class="col-6 col-md-3 col-lg-3 offset-lg-1">
+        <h5 class="fw-bold mb-3 text-uppercase fs-6 tracking-wide">Quick Links</h5>
+        <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
+          <li><a href="#home" class="text-decoration-none text-white-50">Home</a></li>
+          <li><a href="admission.html" class="text-decoration-none text-white-50">Admission</a></li>
+          <li><a href="#result" class="text-decoration-none text-white-50">Results</a></li>
+          <li><a href="#gallery" class="text-decoration-none text-white-50">Gallery</a></li>
+          <li><a href="#" data-bs-toggle="modal" data-bs-target="#studentLoginModal" class="text-decoration-none text-white-50">Student Portal</a></li>
+        </ul>
+      </div>
+
+      <!-- Contact Info Column -->
+      <div class="col-6 col-md-4 col-lg-4">
+        <h5 class="fw-bold mb-3 text-uppercase fs-6 tracking-wide">Contact Us</h5>
+        <ul class="list-unstyled d-flex flex-column gap-3 mb-0 text-white-50 small">
+          <li class="d-flex align-items-start">
+            <i class="bi bi-geo-alt-fill me-2 mt-1 text-white"></i>
+            <span>Anwariyya Arabic College,<br>Your City, State, PIN Code</span>
+          </li>
+          <li class="d-flex align-items-center">
+            <i class="bi bi-telephone-fill me-2 text-white"></i>
+            <span>+91 98765 43210</span>
+          </li>
+          <li class="d-flex align-items-center">
+            <i class="bi bi-envelope-fill me-2 text-white"></i>
+            <span>info@anwariyya.in</span>
+          </li>
+        </ul>
+      </div>
+      
+    </div>
+
+    <hr class="mt-5 mb-3 border-secondary">
+    
+    <!-- Copyright Bottom Bar -->
+    <div class="row text-center align-items-center">
+      <div class="col-12 text-white-50 small">
+        &copy; 2024 Anwariyya Arabic College. All Rights Reserved.
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- AOS Script -->
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+  AOS.init({
+    duration: 800,
+    once: true,
+  });
+  
+  document.addEventListener("DOMContentLoaded", function() {
+    // Home screen image slider
+    let currentSlide = 0;
+    const slides = document.getElementsByClassName("slide");
+
+    function showSlides() {
+      if (slides.length === 0) return;
+
+      // Remove active class from the previous slide
+      if (slides[currentSlide]) {
+        slides[currentSlide].classList.remove('active');
+      }
+
+      // Move to the next slide
+      currentSlide = (currentSlide + 1) % slides.length;
+      
+      // Add active class to the new current slide
+      slides[currentSlide].classList.add('active');
+
+      setTimeout(showSlides, 3000); // Change image every 3 seconds
+    }
+    
+    showSlides();
+  });
+</script>
+</body>
+</html>

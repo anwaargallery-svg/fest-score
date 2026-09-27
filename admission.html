@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admissions - Anwariyya</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; 
+                   script-src 'self' https://code.jquery.com https://cdn.jsdelivr.net; 
+                   style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; 
+                   img-src 'self' data:; 
+                   font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com;
+                   connect-src 'self';">
+    <script defer src="assets/script.js"></script>
+    <script defer src="https://code.jquery.com/jquery-4.0.0.js" integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U=" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Anek+Malayalam:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        .malayalam-font {
+            font-family: 'Anek Malayalam', sans-serif;
+        }
+
+        /* Custom styles for the QR Code Scanner Viewfinder */
+        #qr-reader-region-border {
+            stroke: #198754 !important; /* A nice green color to match your theme */
+        }
+        #qr-reader-results {
+            color: #198754;
+        }
+    </style>
+</head>
+<body class="pt-5">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
+  <div class="container-fluid">
+  <div class="logo_name mb-0">
+    <div class="lo">  <img  class="logo" src="assets/images/image.png" alt=""></div>
+            <div>  <h1 >Anwariyya Arabic College </h1> </div>
+            <h6>www.anwariyya.in</h6>
+        </div>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse justify-content-end navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" aria-current="page" href="index.html#home">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" href="admission.html">Admission</a>
+        </li>
+       
+        <li class="nav-item">
+          <a class="nav-link " aria-disabled="true " href="index.html#result">result</a>
+        </li>
+       
+        <li class="nav-item">
+          <a class="nav-link " aria-disabled="true " href="index.html#gallery">gallery</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link " aria-disabled="true" href="index.html#contact">contact</a>
+        </li>
+        <li class="nav-item">
+        <button type="button" data-bs-toggle="modal" data-bs-target="#studentLoginModal" class="btn btn-success btn-lg"> <i class="bi bi-person-circle"></i> student portal </button>
+        </li>
+    </ul>
+      
+    </div>
+  </div>
+</nav>
+
+<!-- Student Login Modal -->
+<div class="modal fade" id="studentLoginModal" tabindex="-1" aria-labelledby="studentLoginModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title fw-bold" id="studentLoginModalLabel"><i class="bi bi-person-circle me-2"></i>Student Portal Login</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div id="loginMessage" style="display: none;"></div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Enrollment Number</label>
+          <input type="text" class="form-control" id="loginEnrollNo" placeholder="e.g. 20262024001">
+        </div>
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Password</label>
+          <input type="password" class="form-control" id="loginPassword" placeholder="Enter password" autocomplete="current-password">
+        </div>
+        <button type="button" id="studentLoginBtn" class="btn btn-success w-100 fw-bold">Login to Portal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <!-- Admission Form Section -->
+  <section id="addmition" class="py-5 bg-light" style="min-height: 80vh;">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="fw-bold fs-2 text-uppercase">Online Admission Form</h2>
+        <h4 class="malayalam-font text-secondary mb-3">അഡ്മിഷൻ ഫോം</h4>
+        <p class="text-muted">Fill in the details carefully to apply for admission at Anwariyya Arabic College</p>
+        <button type="button" class="btn btn-outline-primary mt-2 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#admissionStatusModal">
+          <i class="bi bi-search me-1"></i> View Admission Status
+        </button>
+        <div class="mt-4">
+          <a href="muthawal-admission.html" class="btn btn-warning fw-bold shadow-sm"><i class="bi bi-award me-1"></i> Click here for Muthawal Admission</a>
+        </div>
+      </div>
+      
+      <div class="row justify-content-center" id="admissionFormContainer">
+        <div class="col-12 col-lg-10">
+          <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body p-4 p-md-5">
+              <form id="admissionForm" enctype="multipart/form-data">
+                
+                <!-- Section 1: Personal Details -->
+                <h5 class="mb-4 text-primary border-bottom pb-2">Personal Details <span class="malayalam-font">(വ്യക്തിഗത വിവരങ്ങൾ)</span></h5>
+                <div class="row g-3 mb-4">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Name <span class="malayalam-font">(പേര്)</span> *</label>
+                    <input type="text" class="form-control" id="admFullName" required placeholder="Enter full name">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">House Name <span class="malayalam-font">(വീട്ടുപേര്)</span> *</label>
+                    <input type="text" class="form-control" id="admHouseName" required placeholder="Enter house name">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Father's Name <span class="malayalam-font">(പിതാവിന്റെ പേര്)</span> *</label>
+                    <input type="text" class="form-control" id="admFatherName" required placeholder="Enter father's name">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Father's Occupation <span class="malayalam-font">(പിതാവിന്റെ ജോലി)</span> *</label>
+                    <input type="text" class="form-control" id="admFatherOccupation" required placeholder="Enter father's occupation">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Mother's Name <span class="malayalam-font">(മാതാവിന്റെ പേര്)</span> *</label>
+                    <input type="text" class="form-control" id="admMotherName" required placeholder="Enter mother's name">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Permanent Address <span class="malayalam-font">(സ്ഥിരമായ മേൽവിലാസം)</span> *</label>
+                    <textarea class="form-control" id="admAddress" rows="2" required placeholder="Enter full address"></textarea>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Pincode <span class="malayalam-font">(പിൻകോഡ്)</span> *</label>
+                    <input type="number" class="form-control" id="admPincode" required placeholder="Enter pincode">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Contact Number <span class="malayalam-font">(ഫോൺ നമ്പർ)</span> *</label>
+                    <input type="tel" class="form-control" id="admPhone" required placeholder="Enter contact number">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Email <span class="malayalam-font">(ഇമെയിൽ)</span></label>
+                    <input type="email" class="form-control" id="admEmail" placeholder="example@email.com">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Date of Birth <span class="malayalam-font">(ജനന തിയ്യതി)</span> *</label>
+                    <input type="date" class="form-control" id="admDOB" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Age <span class="malayalam-font">(വയസ്സ്)</span></label>
+                    <input type="number" class="form-control" id="admAge" readonly placeholder="Auto-calculated">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Aadhar Number <span class="malayalam-font">(ആധാർ നമ്പർ)</span> *</label>
+                    <input type="number" class="form-control" id="admAadhar" required placeholder="Enter Aadhar number">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Course / Class <span class="malayalam-font">(കോഴ്സും ക്ലാസ്സും)</span> *</label>
+                    <select class="form-select" id="admCourse" required>
+                      <option value="" selected disabled>Select Course/Class (കോഴ്സ്)</option>
+                      <option value="Hifz">Hifz (ഹിഫ്ള്)</option>
+                      <option value="Shareeath">Shareeath (ശരീഅത്ത്)</option>
+                      <option value="Shareeath - 8">Shareeath - 8</option>
+                      <option value="Shareeath - 9">Shareeath - 9</option>
+                      <option value="Shareeath - 10">Shareeath - 10</option>
+                      <option value="Shareeath - +1">Shareeath - +1</option>
+                      <option value="Shareeath - +2">Shareeath - +2</option>
+                      <option value="Shareeath - D1">Shareeath - D1</option>
+                      <option value="Shareeath - D2">Shareeath - D2</option>
+                      <option value="Shareeath - D3">Shareeath - D3</option>
+                      <option value="Shareeath - Mukhthasar">Shareeath - Mukhthasar</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Section 2: Madrasa Education -->
+                <h5 class="mb-3 text-primary border-bottom pb-2 mt-4">Madrasa Education <span class="malayalam-font">(മദ്രസാ പഠനം)</span></h5>
+                
+                <h6 class="text-secondary mt-3">Class 5 Details <span class="malayalam-font">(അഞ്ചാം ക്ലാസ്സ്)</span> *</h6>
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Madrasa Name <span class="malayalam-font">(മദ്രസയുടെ പേര്)</span> *</label>
+                    <input type="text" class="form-control" id="admMadrasa5Name" required placeholder="Enter Madrasa name">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Reg Number <span class="malayalam-font">(രജിസ്റ്റർ നമ്പർ)</span> *</label>
+                    <input type="text" class="form-control" id="admMadrasa5RegNo" required placeholder="Enter Reg number">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Total Mark <span class="malayalam-font">(ആകെ മാർക്ക്)</span> *</label>
+                    <input type="number" class="form-control" id="admMadrasa5Mark" required placeholder="Enter total mark">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Year of Pass <span class="malayalam-font">(പാസ്സായ വർഷം)</span> *</label>
+                    <input type="number" class="form-control" id="admMadrasa5Year" required placeholder="e.g. 2021">
+                  </div>
+                </div>
+
+                <h6 class="text-secondary mt-4">Class 7 Details <span class="malayalam-font">(ഏഴാം ക്ലാസ്സ്)</span> *</h6>
+                <div class="row g-3 mb-4">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Madrasa Name <span class="malayalam-font">(മദ്രസയുടെ പേര്)</span> *</label>
+                    <input type="text" class="form-control" id="admMadrasa7Name" required placeholder="Enter Madrasa name">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Reg Number <span class="malayalam-font">(രജിസ്റ്റർ നമ്പർ)</span> *</label>
+                    <input type="text" class="form-control" id="admMadrasa7RegNo" required placeholder="Enter Reg number">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Total Mark <span class="malayalam-font">(ആകെ മാർക്ക്)</span> *</label>
+                    <input type="number" class="form-control" id="admMadrasa7Mark" required placeholder="Enter total mark">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Year of Pass <span class="malayalam-font">(പാസ്സായ വർഷം)</span> *</label>
+                    <input type="number" class="form-control" id="admMadrasa7Year" required placeholder="e.g. 2023">
+                  </div>
+                </div>
+
+                <!-- Section 3: School Education -->
+                <h5 class="mb-4 text-primary border-bottom pb-2 mt-4">School Education <span class="malayalam-font">(സ്കൂൾ പഠനം)</span></h5>
+                <div class="row g-3 mb-4">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Name of School & Place <span class="malayalam-font">(സ്കൂളിന്റെ പേരും സ്ഥലവും)</span> *</label>
+                    <input type="text" class="form-control" id="admSchool" required placeholder="Enter school name & place">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Date <span class="malayalam-font">(തിയ്യതി)</span></label>
+                    <input type="date" class="form-control" id="admDate" readonly>
+                  </div>
+                </div>
+
+                <!-- Section 4: Document Uploads -->
+                <h5 class="mb-4 text-primary border-bottom pb-2 mt-4">Document Uploads <span class="malayalam-font">(രേഖകൾ)</span></h5>
+                <div class="row g-3 mb-4">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Applicant Photo <span class="malayalam-font">(ഫോട്ടോ)</span> *</label>
+                    <input class="form-control" type="file" id="admPhoto" accept="image/*" required>
+                    <div class="form-text text-muted">Upload a recent passport-size photo.</div>
+                  </div>
+                </div>
+
+                <!-- Declaration & Submit -->
+                <div class="form-check mb-4">
+                  <input class="form-check-input" type="checkbox" id="declaration" required>
+                  <label class="form-check-label text-muted fs-7" for="declaration">
+                    I hereby declare that all the information provided above is true and correct to the best of my knowledge. <span class="malayalam-font">(മുകളിൽ നൽകിയ വിവരങ്ങൾ എല്ലാം സത്യവും ശരിയുമാണെന്ന് ഞാൻ ഇതിനാൽ ബോധിപ്പിക്കുന്നു.)</span>
+                  </label>
+                </div>
+                <div class="text-center">
+                  <button type="submit" class="btn btn-primary btn-lg fw-bold px-5 text-uppercase shadow-sm">Submit Application</button>
+                </div>
+                
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- View Admission Status Modal -->
+  <div class="modal fade" id="admissionStatusModal" tabindex="-1" aria-labelledby="admissionStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold" id="admissionStatusModalLabel"><i class="bi bi-info-circle me-2"></i>Check Admission Status</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="text-muted small mb-4">Enter your Application ID to check the current status of your admission.</p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Application ID</label>
+            <input type="text" class="form-control" id="admissionStatusInput" placeholder="e.g. ADM-1234">
+          </div>
+          <div id="admissionStatusResult" class="alert alert-info mb-0 mt-3" style="display: none;">
+            <!-- Dynamic status text -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#qrScannerModal"><i class="bi bi-qr-code-scan me-2"></i>Scan QR Code</button>
+          <button type="button" id="checkStatusBtn" class="btn btn-primary px-4 fw-bold"><i class="bi bi-search me-2"></i>Check Status</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code Scanner Modal -->
+  <div class="modal fade" id="qrScannerModal" tabindex="-1" aria-labelledby="qrScannerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="qrScannerModalLabel"><i class="bi bi-qr-code-scan me-2"></i>Scan Application QR Code</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center p-4">
+          <div id="qr-reader" style="width: 100%; max-width: 400px; margin: auto;"></div>
+          <div id="qr-reader-results" class="mt-3"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</body>
+</html>

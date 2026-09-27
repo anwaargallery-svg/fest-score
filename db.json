@@ -1,0 +1,100 @@
+{
+  "students": [
+    {
+      "EnrollNo": "20260001",
+      "Name": "mahin",
+      "Course": "Hifz",
+      "CurrentYear": 8,
+      "Status": "Current Student",
+      "Password": "123456",
+      "photo": "data:image/png;base64,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",
+      "houseName": "karinganthodi",
+      "FatherName": "sulaiman",
+      "fatherOccupation": "business",
+      "motherName": "salma",
+      "Contact": "7558084306",
+      "Email": "maheen599sm@gmail.com",
+      "DOB": "2004-07-09",
+      "aadhar": "452292209898",
+      "Address": "gdfghsg",
+      "madrasa5Name": "noorul islam",
+      "madrasa7Name": "noorul islam",
+      "schoolName": "SCS",
+      "darsName": "darunnjath islamic college",
+      "learnedKithabs": "ytgyfgki"
+    }
+  ],
+  "results": [],
+  "admissions": [],
+  "gallery": [],
+  "siteContent": {},
+  "messages": [],
+  "settings": {
+    "admissionsOpen": true
+  },
+  "news": [],
+  "scoreboard": {
+    "enabled": true,
+    "festTitle": "anwariyya sarggolthav 2026",
+    "festStatus": "Completed",
+    "teams": [
+      {
+        "id": "team-1790515614280",
+        "name": "kafah",
+        "color": "#198754",
+        "icon": "bi-award-fill",
+        "points": 5
+      },
+      {
+        "id": "team-1790515621697",
+        "name": "sabath",
+        "color": "#198754",
+        "icon": "bi-award",
+        "points": 4
+      },
+      {
+        "id": "team-1790515588281",
+        "name": "sabath",
+        "color": "#ff0000",
+        "icon": "bi-trophy-fill",
+        "points": 0
+      },
+      {
+        "id": "team-1790515596737",
+        "name": "sumood",
+        "color": "#198754",
+        "icon": "bi-star-fill",
+        "points": 0
+      }
+    ],
+    "results": [
+      {
+        "id": "res-1790532370481",
+        "eventName": "typing",
+        "category": "Super Senior",
+        "first": {
+          "name": "re",
+          "chestNo": "2020",
+          "team": "kafah",
+          "grade": "",
+          "points": 5
+        },
+        "second": {
+          "name": "df",
+          "chestNo": "56",
+          "team": "sabath",
+          "grade": "",
+          "points": 3
+        },
+        "third": {
+          "name": "dsf",
+          "chestNo": "562",
+          "team": "sabath",
+          "grade": "",
+          "points": 1
+        },
+        "updatedAt": "2026-09-27T18:06:10.481Z"
+      }
+    ]
+  }
+}

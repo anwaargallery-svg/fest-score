@@ -1,0 +1,245 @@
+.logo_name{
+    width:50%;
+    height: 80px;
+    overflow: hidden;
+    float : left;
+    
+  
+}
+body{
+margin: 0;
+padding-top: 5rem; /* Adjust this value based on your navbar's height */
+background-color: #f2f2f2;
+}
+html{
+    scroll-behavior: smooth;
+}
+.logo{
+    width: 4rem;
+    height: 4rem;
+    float: left;
+    border-radius: 50%;
+    margin-right: 20px;
+}
+.banner {
+    height: 75vh;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.banner_img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block; 
+}
+
+/* Dark green overlay to make text readable */
+.banner::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(16, 83, 33, 0.65); 
+    pointer-events: none; 
+}
+.buttons{
+    position: absolute;
+    z-index: 100;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.buttons img{
+    width: 10rem;
+    height: 10rem;
+    border-radius: 50%;
+    margin-right: 20px;
+    color: aliceblue;
+}
+
+.buttons h1, h4{
+    color: aliceblue;
+}
+.buttons h4{
+    color: aliceblue;
+}
+.box{
+    margin: 20px;
+    padding: 20px;
+    background-color: #f2f2f2;
+    border-radius: 10px;
+    height: auto;
+    width: 400px;
+    margin-left: 30%;
+    overflow: hidden;
+}
+.text{
+    margin: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    width: 100%;
+}
+.box button{
+    margin-left: 40%;
+    margin-top:10px;
+}
+    
+footer{
+    background-color: #333;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+    bottom: 0;
+    width: 100%;
+}
+.footer_img{
+    width: 4rem;
+    height: 4rem;
+    float: left;
+    border-radius: 50%;
+    margin-right: 20px;
+
+}
+
+/* Custom Table Headings Background Color */
+.table thead th, table th {
+    background-color: #105321 !important;
+    color: #ffffff !important;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    padding: 16px 12px !important;
+    border-bottom: 2px solid #0b3b17 !important;
+}
+.table tbody td {
+    padding: 16px 12px;
+}
+.table-hover tbody tr:hover, .table-hover tbody tr:hover td {
+    background-color: rgba(16, 83, 33, 0.04) !important;
+}
+
+/* Full Screen Scoreboard Mode (No Navbars) */
+body.scoreboard-fullscreen-mode {
+    padding-top: 0 !important;
+    overflow: hidden !important;
+}
+
+body.scoreboard-fullscreen-mode nav.navbar,
+body.scoreboard-fullscreen-mode footer,
+body.scoreboard-fullscreen-mode #home,
+body.scoreboard-fullscreen-mode #news,
+body.scoreboard-fullscreen-mode #muthawalRanksBanner,
+body.scoreboard-fullscreen-mode #about,
+body.scoreboard-fullscreen-mode #courses,
+body.scoreboard-fullscreen-mode #result,
+body.scoreboard-fullscreen-mode #gallery,
+body.scoreboard-fullscreen-mode #dynamicCustomSections {
+    display: none !important;
+}
+
+body.scoreboard-fullscreen-mode #scoreboard {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 999999 !important;
+    overflow-y: auto !important;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+    padding: 2rem 1.5rem !important;
+}
+
+body.scoreboard-fullscreen-mode #scoreboard h2,
+body.scoreboard-fullscreen-mode #scoreboard p,
+body.scoreboard-fullscreen-mode #scoreboard .text-dark {
+    color: #ffffff !important;
+}
+
+body.scoreboard-fullscreen-mode #scoreboard .card {
+    background-color: rgba(30, 41, 59, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    backdrop-filter: blur(10px);
+}
+
+body.scoreboard-fullscreen-mode #scoreboard .table {
+    color: #ffffff !important;
+}
+
+body.scoreboard-fullscreen-mode #scoreboard .table thead th {
+    background-color: #0f172a !important;
+    color: #38bdf8 !important;
+}
+
+body.scoreboard-fullscreen-mode #scoreboard .table tbody tr:hover td {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Event Programme Results - Horizontal Moving & Scrolling Track */
+.fest-horizontal-track {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    gap: 1.25rem;
+    padding: 0.5rem 0.25rem 1.25rem 0.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: #ffc107 rgba(0, 0, 0, 0.1);
+    cursor: grab;
+}
+
+.fest-horizontal-track:active {
+    cursor: grabbing;
+}
+
+.fest-horizontal-track::-webkit-scrollbar {
+    height: 6px;
+}
+.fest-horizontal-track::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+}
+.fest-horizontal-track::-webkit-scrollbar-thumb {
+    background: #ffc107;
+    border-radius: 10px;
+}
+.fest-horizontal-track::-webkit-scrollbar-thumb:hover {
+    background: #e0a800;
+}
+
+.fest-horizontal-track > div,
+.fest-horizontal-track > .fest-card-item {
+    flex: 0 0 auto !important;
+    width: 350px !important;
+    max-width: 85vw !important;
+}
+
+.fest-scroll-arrow-btn {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.85) !important;
+    border: 1px solid rgba(255, 193, 7, 0.4) !important;
+    color: #ffc107 !important;
+    backdrop-filter: blur(4px);
+    transition: all 0.2s ease-in-out;
+}
+.fest-scroll-arrow-btn:hover {
+    background: #ffc107 !important;
+    color: #000000 !important;
+    transform: translateY(-50%) scale(1.1) !important;
+    box-shadow: 0 0 15px rgba(255, 193, 7, 0.5) !important;
+}
+
