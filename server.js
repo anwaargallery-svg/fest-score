@@ -548,12 +548,13 @@ app.get('/api/scoreboard', (req, res) => {
 
 // Admin: Update Scoreboard Settings
 app.post('/api/admin/scoreboard/settings', (req, res) => {
-  const { enabled, festTitle, festStatus } = req.body;
+  const { enabled, festTitle, festStatus, festLogo } = req.body;
   if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
   
   if (typeof enabled === 'boolean') db.scoreboard.enabled = enabled;
   if (festTitle !== undefined) db.scoreboard.festTitle = festTitle;
   if (festStatus !== undefined) db.scoreboard.festStatus = festStatus;
+  if (festLogo !== undefined) db.scoreboard.festLogo = festLogo;
   
   saveDb();
   res.json({ success: true, message: 'Scoreboard settings updated.', scoreboard: db.scoreboard });

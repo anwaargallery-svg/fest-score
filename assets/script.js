@@ -1192,6 +1192,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Load Fest Scoreboard Data ---
+    let lastFestScoreboardJSON = '';
+
     const loadFestScoreboard = async () => {
         const scoreboardSection = document.getElementById('scoreboard');
         const teamsContainer = document.getElementById('scoreboardTeamsContainer');
@@ -1213,6 +1215,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const sb = data.scoreboard;
 
+            const currentJSON = JSON.stringify(sb);
+            if (currentJSON === lastFestScoreboardJSON) {
+                // Scoreboard data unchanged - skip DOM re-renders
+                return;
+            }
+
+            const isInitial = !lastFestScoreboardJSON;
+            lastFestScoreboardJSON = currentJSON;
+
             // If scoreboard is disabled by admin, hide the section gracefully
             if (sb.enabled === false) {
                 scoreboardSection.style.display = 'none';
@@ -1223,6 +1234,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (titleHeader) titleHeader.innerText = sb.festTitle || 'ATSA Arts Fest Scoreboard';
             if (statusBadge) statusBadge.innerHTML = `<i class="bi bi-trophy-fill me-1"></i> ${sb.festStatus || 'Live'}`;
+            
+            const festLogoImg = document.getElementById('festLogoHeader');
+            if (festLogoImg) {
+                if (sb.festLogo) {
+                    festLogoImg.src = sb.festLogo;
+                    festLogoImg.style.display = 'inline-block';
+                } else {
+                    festLogoImg.style.display = 'none';
+                }
+            }
             
             if (liveDot) {
                 if (sb.festStatus === 'Live') {
@@ -1252,18 +1273,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         const percent = Math.min(100, Math.round(((team.points || 0) / maxPoints) * 100));
 
                         teamsHTML += `
-                            <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="${index * 100}">
-                                <div class="card h-100 shadow border-0 rounded-4 overflow-hidden position-relative hover-lift">
-                                    <div class="card-header border-0 text-white text-center py-3 position-relative" style="background-color: ${team.color || '#198754'};">
-                                        <span class="position-absolute top-0 start-0 m-2 badge ${badgeClass} shadow-sm d-inline-flex align-items-center gap-1"><i class="bi ${rankIcon}"></i> ${rankLabel}</span>
-                                        <h4 class="fw-bold mb-0 mt-2">${team.name}</h4>
+                            <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="${index * 50}">
+                                <div class="card flat-card h-100 overflow-hidden">
+                                    <div class="p-3 text-center border-bottom bg-light">
+                                        <span class="badge ${badgeClass} mb-1 small">${rankLabel} Place</span>
+                                        <h5 class="fw-bold mb-0 text-dark">${team.name}</h5>
                                     </div>
                                     <div class="card-body text-center p-3">
-                                        <div class="display-6 fw-bold text-dark mb-1">${team.points || 0}</div>
-                                        <small class="text-uppercase text-muted fw-semibold" style="letter-spacing: 1px;">Points</small>
+                                        <div class="display-6 fw-bold text-dark mb-1" style="font-weight: 800; font-size: 2.25rem;">${team.points || 0}</div>
+                                        <small class="text-uppercase text-muted fw-semibold small" style="letter-spacing: 0.5px;">Points</small>
                                         
-                                        <div class="progress mt-3" style="height: 8px;">
-                                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: ${percent}%; background-color: ${team.color || '#198754'};" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        <div class="progress mt-3" style="height: 5px; background-color: #e5e7eb; border-radius: 10px;">
+                                            <div class="progress-bar" role="progressbar" style="width: ${percent}%; background-color: ${team.color || '#10b981'}; border-radius: 10px;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -1275,7 +1296,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // Render Published Event Results (Card View Grid & Table View)
+            window.allFestResults = sb.results || [];
             const cardsContainer = document.getElementById('festResultsCardsContainer');
+            const tableBody = document.getElementById('festResultsTableBody');
 
             const matchWinnerIndex = (w, q) => {
                 if (!w) return false;
@@ -1288,67 +1311,48 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             const renderSingleCardRowIndex = (rankPlace, w) => {
+                let badgeClass = 'flat-badge-3rd';
+                let rowClass = 'flat-rank-row-3rd';
+                let rankText = '3rd';
+                let ptsBadgeClass = 'pts-badge-3rd';
+
                 if (rankPlace === '1st') {
-                    return `
-                        <div class="p-2 rounded-3 bg-warning-subtle border border-warning-subtle d-flex align-items-center justify-content-between mb-1">
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="bi bi-trophy-fill text-warning fs-3 me-1"></i>
-                                <div>
-                                    <div class="d-flex align-items-center gap-1 mb-1">
-                                        <span class="badge bg-warning text-dark fw-bold small"><i class="bi bi-trophy-fill me-1"></i>1st</span>
-                                        <span class="fw-bold text-dark leading-tight">${w.name || '-'}</span>
-                                    </div>
-                                    <div class="d-flex flex-wrap align-items-center gap-1">
-                                        ${w.chestNo ? `<span class="badge bg-dark text-white font-monospace" style="font-size: 0.65rem;">Chest #${w.chestNo}</span>` : ''}
-                                        <span class="badge bg-success" style="font-size: 0.65rem;">${w.team || '-'}</span>
-                                        ${w.grade ? `<span class="badge bg-secondary" style="font-size: 0.65rem;">${w.grade}</span>` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="badge bg-warning text-dark fw-bold">+${w.points || 0} pts</span>
-                        </div>
-                    `;
+                    badgeClass = 'flat-badge-1st';
+                    rowClass = 'flat-rank-row-1st';
+                    rankText = '1st';
+                    ptsBadgeClass = 'pts-badge-1st';
                 } else if (rankPlace === '2nd') {
+                    badgeClass = 'flat-badge-2nd';
+                    rowClass = 'flat-rank-row-2nd';
+                    rankText = '2nd';
+                    ptsBadgeClass = 'pts-badge-2nd';
+                }
+
+                if (!w || !w.name) {
                     return `
-                        <div class="p-2 rounded-3 bg-secondary-subtle border border-secondary-subtle d-flex align-items-center justify-content-between mb-1">
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="bi bi-award-fill text-secondary fs-3 me-1"></i>
-                                <div>
-                                    <div class="d-flex align-items-center gap-1 mb-1">
-                                        <span class="badge bg-secondary text-white fw-bold small"><i class="bi bi-award-fill me-1"></i>2nd</span>
-                                        <span class="fw-semibold text-dark leading-tight">${w.name || '-'}</span>
-                                    </div>
-                                    <div class="d-flex flex-wrap align-items-center gap-1">
-                                        ${w.chestNo ? `<span class="badge bg-dark text-white font-monospace" style="font-size: 0.65rem;">Chest #${w.chestNo}</span>` : ''}
-                                        <span class="badge bg-danger" style="font-size: 0.65rem;">${w.team || '-'}</span>
-                                        ${w.grade ? `<span class="badge bg-secondary" style="font-size: 0.65rem;">${w.grade}</span>` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="badge bg-secondary text-white fw-bold">+${w.points || 0} pts</span>
-                        </div>
-                    `;
-                } else {
-                    return `
-                        <div class="p-2 rounded-3 bg-danger-subtle border border-danger-subtle d-flex align-items-center justify-content-between mb-1">
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="bi bi-award text-danger fs-3 me-1"></i>
-                                <div>
-                                    <div class="d-flex align-items-center gap-1 mb-1">
-                                        <span class="badge bg-danger text-white fw-bold small"><i class="bi bi-award me-1"></i>3rd</span>
-                                        <span class="fw-semibold text-dark leading-tight">${w.name || '-'}</span>
-                                    </div>
-                                    <div class="d-flex flex-wrap align-items-center gap-1">
-                                        ${w.chestNo ? `<span class="badge bg-dark text-white font-monospace" style="font-size: 0.65rem;">Chest #${w.chestNo}</span>` : ''}
-                                        <span class="badge bg-primary" style="font-size: 0.65rem;">${w.team || '-'}</span>
-                                        ${w.grade ? `<span class="badge bg-secondary" style="font-size: 0.65rem;">${w.grade}</span>` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="badge bg-danger text-white fw-bold">+${w.points || 0} pts</span>
+                        <div class="flat-rank-row ${rowClass} d-flex align-items-center justify-content-between opacity-50 py-2">
+                            <span class="badge ${badgeClass}">${rankText}</span>
+                            <span class="text-muted small">-</span>
                         </div>
                     `;
                 }
+
+                return `
+                    <div class="flat-rank-row ${rowClass} d-flex align-items-center justify-content-between py-2 px-2.5">
+                        <div class="d-flex align-items-center gap-2 overflow-hidden me-2">
+                            <span class="badge ${badgeClass}">${rankText}</span>
+                            <div class="text-truncate">
+                                <div class="fw-bold text-dark text-truncate" style="font-size: 0.95rem; font-weight: 700;">${w.name}</div>
+                                <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                                    ${w.chestNo ? `<span class="flat-tag-chest">#${w.chestNo}</span>` : ''}
+                                    ${w.team ? `<span class="flat-tag-team">${w.team}</span>` : ''}
+                                    ${w.grade ? `<span class="flat-tag-grade">Grade ${w.grade}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="badge ${ptsBadgeClass} fw-extrabold px-2.5 py-1.5" style="font-size: 0.85rem; font-weight: 800;">+${w.points || 0} pts</span>
+                    </div>
+                `;
             };
 
             const renderCardBlockIndex = (rankPlace, winnersData) => {
@@ -1383,7 +1387,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 `).join('');
             };
 
-            const renderResultsView = (filterCategory = 'all', searchQuery = '') => {
+            window.festSetIndex = 0;
+            window.festCountdownSeconds = 15;
+
+            const startCardTimer = (totalPages) => {
+                if (window.festCardTimerInterval) clearInterval(window.festCardTimerInterval);
+                if (totalPages <= 1) return;
+
+                window.festCardTimerInterval = setInterval(() => {
+                    window.festCountdownSeconds--;
+
+                    const textEl = document.getElementById('festCountdownText');
+                    const barEl = document.getElementById('festCountdownBar');
+
+                    if (textEl) textEl.innerText = `${window.festCountdownSeconds}s`;
+                    if (barEl) barEl.style.width = `${(window.festCountdownSeconds / 15) * 100}%`;
+
+                    if (window.festCountdownSeconds <= 0) {
+                        window.festCountdownSeconds = 15;
+                        window.festSetIndex = (window.festSetIndex + 1) % totalPages;
+                        const activeBtn = document.querySelector('#festCategoryFilterGroup .btn.active');
+                        const activeFilter = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+                        const searchInput = document.getElementById('festSearchInput');
+                        const q = searchInput ? searchInput.value : '';
+                        renderResultsView(activeFilter, q, false);
+                    }
+                }, 1000);
+            };
+
+            const renderResultsView = (filterCategory = 'all', searchQuery = '', resetPage = true) => {
                 let filtered = window.allFestResults || [];
 
                 if (filterCategory !== 'all') {
@@ -1400,49 +1432,147 @@ document.addEventListener('DOMContentLoaded', function() {
                     );
                 }
 
-                // Render Cards View
+                if (resetPage) {
+                    window.festSetIndex = 0;
+                    window.festCountdownSeconds = 15;
+                }
+
+                // Balance mixed cards if 'all' category is selected
+                let orderedCards = [];
+                if (filterCategory === 'all') {
+                    const buckets = {
+                        'Sub-Junior': filtered.filter(r => String(r.category).toLowerCase() === 'sub-junior'),
+                        'Junior': filtered.filter(r => String(r.category).toLowerCase() === 'junior'),
+                        'Senior': filtered.filter(r => String(r.category).toLowerCase() === 'senior'),
+                        'Super Senior': filtered.filter(r => String(r.category).toLowerCase() === 'super senior')
+                    };
+                    const catKeys = ['Sub-Junior', 'Junior', 'Senior', 'Super Senior'];
+                    const otherCards = filtered.filter(r => !catKeys.map(k=>k.toLowerCase()).includes(String(r.category).toLowerCase()));
+                    const maxLen = Math.max(...catKeys.map(k => buckets[k].length), 1);
+
+                    for (let i = 0; i < maxLen; i++) {
+                        catKeys.forEach(k => {
+                            if (buckets[k][i]) orderedCards.push(buckets[k][i]);
+                        });
+                    }
+                    otherCards.forEach(c => orderedCards.push(c));
+                } else {
+                    orderedCards = filtered;
+                }
+
+                const cardsPerPage = 4;
+                const totalPages = Math.ceil(orderedCards.length / cardsPerPage) || 1;
+                
+                if (window.festSetIndex >= totalPages) window.festSetIndex = 0;
+
+                // Render 4-Card Set View
                 if (cardsContainer) {
-                    if (filtered.length === 0) {
+                    if (orderedCards.length === 0) {
                         cardsContainer.innerHTML = '<div class="w-100 text-center py-5 text-muted"><i class="bi bi-inbox display-4 d-block mb-3 opacity-50"></i><h5>No event programme results found.</h5><p class="small">Try adjusting search or category filter.</p></div>';
+                        if (window.festCardTimerInterval) clearInterval(window.festCardTimerInterval);
                     } else {
-                        let singleSet = filtered;
-                        if (singleSet.length > 0 && singleSet.length < 4) {
-                            let expanded = [];
-                            while (expanded.length < 4) {
-                                expanded = expanded.concat(filtered);
-                            }
-                            singleSet = expanded;
-                        }
+                        const currentSetCards = orderedCards.slice(window.festSetIndex * cardsPerPage, (window.festSetIndex + 1) * cardsPerPage);
 
-                        // Duplicate singleSet for 360° infinite continuous loop
-                        const fullList = singleSet.concat(singleSet);
-
-                        let cardsHTML = '';
-                        fullList.forEach(res => {
-                            cardsHTML += `
-                                <div class="fest-card-item">
-                                    <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden hover-lift bg-white">
-                                        <div class="card-header bg-warning-subtle p-3 d-flex justify-content-between align-items-center border-bottom border-warning-subtle">
-                                            <div>
-                                                <h6 class="fw-bold mb-0 text-dark" style="color: #000000 !important;"><i class="bi bi-award-fill text-warning me-2"></i>${res.eventName}</h6>
-                                                <small class="text-dark" style="color: #000000 !important; font-weight: 600;"><i class="bi bi-tag me-1"></i>${res.category || 'General'}</small>
-                                            </div>
-                                            <span class="badge bg-dark text-white fw-bold px-2 py-1 rounded-pill small">Rank List</span>
+                        let cardsHTML = `
+                            <div class="mb-3 px-1">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-dark text-white rounded-pill px-3 py-1.5 fw-bold small">
+                                            Set ${window.festSetIndex + 1} of ${totalPages}
+                                        </span>
+                                        ${totalPages > 1 ? `<small class="text-muted fw-semibold">Auto-switching in <strong id="festCountdownText">${window.festCountdownSeconds}s</strong></small>` : ''}
+                                    </div>
+                                    ${totalPages > 1 ? `
+                                        <div class="d-flex align-items-center gap-1">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" id="prevSetBtn" title="Previous Set">
+                                                <i class="bi bi-chevron-left me-1"></i> Prev Set
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" id="nextSetBtn" title="Next Set">
+                                                Next Set <i class="bi bi-chevron-right ms-1"></i>
+                                            </button>
                                         </div>
-                                        <div class="card-body p-3 d-flex flex-column gap-2">
-                                            <!-- 1st Rank Gold -->
+                                    ` : ''}
+                                </div>
+                                ${totalPages > 1 ? `
+                                    <div class="progress" style="height: 4px; background-color: #e2e8f0; border-radius: 4px;">
+                                        <div id="festCountdownBar" class="progress-bar bg-warning" style="width: ${(window.festCountdownSeconds / 15) * 100}%; transition: width 1s linear;"></div>
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3 mb-2">
+                        `;
+
+                        currentSetCards.forEach((res, index) => {
+                            const delay = (index * 0.08).toFixed(2);
+                            cardsHTML += `
+                                <div class="col fest-card-anim" style="animation-delay: ${delay}s;">
+                                    <div class="card flat-card h-100 p-3 shadow-sm">
+                                        <div class="text-center mb-2 pb-2 border-bottom">
+                                            <h5 class="fw-extrabold mb-1 text-dark text-center" style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.2px;">
+                                                ${res.eventName}
+                                            </h5>
+                                            <span class="flat-tag" style="font-size: 0.8rem; font-weight: 700; padding: 3px 10px;">${res.category || 'General'}</span>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1">
                                             ${renderCardBlockIndex('1st', res.first)}
-                                            <!-- 2nd Rank Silver -->
                                             ${renderCardBlockIndex('2nd', res.second)}
-                                            <!-- 3rd Rank Bronze -->
                                             ${renderCardBlockIndex('3rd', res.third)}
                                         </div>
                                     </div>
                                 </div>
                             `;
                         });
+                        cardsHTML += `</div>`;
+
                         cardsContainer.innerHTML = cardsHTML;
-                        initFestHorizontalScroll(cardsContainer, ['festScrollLeftBtn', 'festFloatingLeftBtn'], ['festScrollRightBtn', 'festFloatingRightBtn'], 'left-to-right');
+
+                        // Attach manual pagination handlers
+                        const prevBtn = document.getElementById('prevSetBtn');
+                        const nextBtn = document.getElementById('nextSetBtn');
+
+                        if (prevBtn) {
+                            prevBtn.onclick = () => {
+                                window.festSetIndex = (window.festSetIndex - 1 + totalPages) % totalPages;
+                                window.festCountdownSeconds = 15;
+                                renderResultsView(filterCategory, searchQuery, false);
+                                startCardTimer(totalPages);
+                            };
+                        }
+
+                        if (nextBtn) {
+                            nextBtn.onclick = () => {
+                                window.festSetIndex = (window.festSetIndex + 1) % totalPages;
+                                window.festCountdownSeconds = 15;
+                                renderResultsView(filterCategory, searchQuery, false);
+                                startCardTimer(totalPages);
+                            };
+                        }
+
+                        // Wire navigation arrow buttons if present
+                        ['festScrollLeftBtn', 'festFloatingLeftBtn'].forEach(id => {
+                            const btn = document.getElementById(id);
+                            if (btn) btn.onclick = (e) => {
+                                e.preventDefault();
+                                window.festSetIndex = (window.festSetIndex - 1 + totalPages) % totalPages;
+                                window.festCountdownSeconds = 15;
+                                renderResultsView(filterCategory, searchQuery, false);
+                                startCardTimer(totalPages);
+                            };
+                        });
+
+                        ['festScrollRightBtn', 'festFloatingRightBtn'].forEach(id => {
+                            const btn = document.getElementById(id);
+                            if (btn) btn.onclick = (e) => {
+                                e.preventDefault();
+                                window.festSetIndex = (window.festSetIndex + 1) % totalPages;
+                                window.festCountdownSeconds = 15;
+                                renderResultsView(filterCategory, searchQuery, false);
+                                startCardTimer(totalPages);
+                            };
+                        });
+
+                        startCardTimer(totalPages);
                     }
                 }
 
@@ -1476,7 +1606,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
 
-            renderResultsView();
+            renderResultsView('all', '', isInitial);
 
             // Set up search and category filter event handlers
             const searchInput = document.getElementById('festSearchInput');
@@ -1527,6 +1657,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
     loadFestScoreboard();
+    setInterval(loadFestScoreboard, 5000);
 
     // --- Full Screen Scoreboard Mode (No Navbars) ---
     const toggleFullScreenBtn = document.getElementById('toggleFullScreenBtn');

@@ -2702,10 +2702,25 @@ const initAdminDashboard = () => {
             const sbEnableSwitch = document.getElementById('sbEnableSwitch');
             const sbFestTitleInput = document.getElementById('sbFestTitleInput');
             const sbFestStatusSelect = document.getElementById('sbFestStatusSelect');
+            const sbFestLogoInput = document.getElementById('sbFestLogoInput');
+            const sbFestLogoPreview = document.getElementById('sbFestLogoPreview');
+            const sbFestLogoPlaceholder = document.getElementById('sbFestLogoPlaceholder');
 
             if (sbEnableSwitch) sbEnableSwitch.checked = sb.enabled !== false;
             if (sbFestTitleInput) sbFestTitleInput.value = sb.festTitle || 'ATSA Arts Fest 2026';
             if (sbFestStatusSelect) sbFestStatusSelect.value = sb.festStatus || 'Live';
+            if (sbFestLogoInput) sbFestLogoInput.value = sb.festLogo || '';
+            if (sbFestLogoPreview) {
+                if (sb.festLogo) {
+                    sbFestLogoPreview.src = sb.festLogo;
+                    sbFestLogoPreview.style.display = 'block';
+                    if (sbFestLogoPlaceholder) sbFestLogoPlaceholder.style.display = 'none';
+                } else {
+                    sbFestLogoPreview.src = '';
+                    sbFestLogoPreview.style.display = 'none';
+                    if (sbFestLogoPlaceholder) sbFestLogoPlaceholder.style.display = 'block';
+                }
+            }
 
             // Populate Team Select dropdowns in Result Modal
             const teamSelects = document.querySelectorAll('.festTeamSelect');
@@ -2731,7 +2746,7 @@ const initAdminDashboard = () => {
                                 <td><span class="fw-bold text-dark">${t.name}</span></td>
                                 <td>
                                     <span class="badge text-white px-2 py-1" style="background-color: ${t.color || '#198754'};">
-                                        <i class="bi ${t.icon || 'bi-trophy-fill'} me-1"></i>${t.color || '#198754'}
+                                        ${t.color || '#198754'}
                                     </span>
                                 </td>
                                 <td><span class="badge bg-success fs-6">${t.points || 0} pts</span></td>
@@ -2792,15 +2807,58 @@ const initAdminDashboard = () => {
     }
     loadAdminScoreboard();
 
+    // Fest Logo File Upload Handler
+    const sbFestLogoFileInput = document.getElementById('sbFestLogoFileInput');
+    if (sbFestLogoFileInput) {
+        sbFestLogoFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const base64 = evt.target.result;
+                    const sbFestLogoInput = document.getElementById('sbFestLogoInput');
+                    const sbFestLogoPreview = document.getElementById('sbFestLogoPreview');
+                    const sbFestLogoPlaceholder = document.getElementById('sbFestLogoPlaceholder');
+                    if (sbFestLogoInput) sbFestLogoInput.value = base64;
+                    if (sbFestLogoPreview) {
+                        sbFestLogoPreview.src = base64;
+                        sbFestLogoPreview.style.display = 'block';
+                    }
+                    if (sbFestLogoPlaceholder) sbFestLogoPlaceholder.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    const removeSbFestLogoBtn = document.getElementById('removeSbFestLogoBtn');
+    if (removeSbFestLogoBtn) {
+        removeSbFestLogoBtn.addEventListener('click', function() {
+            const sbFestLogoInput = document.getElementById('sbFestLogoInput');
+            const sbFestLogoPreview = document.getElementById('sbFestLogoPreview');
+            const sbFestLogoFileInput = document.getElementById('sbFestLogoFileInput');
+            const sbFestLogoPlaceholder = document.getElementById('sbFestLogoPlaceholder');
+            if (sbFestLogoInput) sbFestLogoInput.value = '';
+            if (sbFestLogoFileInput) sbFestLogoFileInput.value = '';
+            if (sbFestLogoPreview) {
+                sbFestLogoPreview.src = '';
+                sbFestLogoPreview.style.display = 'none';
+            }
+            if (sbFestLogoPlaceholder) sbFestLogoPlaceholder.style.display = 'block';
+        });
+    }
+
     // 1. Save Settings Form
     const scoreboardSettingsForm = document.getElementById('scoreboardSettingsForm');
     if (scoreboardSettingsForm) {
         scoreboardSettingsForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const sbFestLogoInput = document.getElementById('sbFestLogoInput');
             const payload = {
                 enabled: document.getElementById('sbEnableSwitch').checked,
                 festTitle: document.getElementById('sbFestTitleInput').value.trim(),
-                festStatus: document.getElementById('sbFestStatusSelect').value
+                festStatus: document.getElementById('sbFestStatusSelect').value,
+                festLogo: sbFestLogoInput ? sbFestLogoInput.value : ''
             };
 
             const res = await fetch(getApiUrl('/api/admin/scoreboard/settings'), {
@@ -2823,7 +2881,7 @@ const initAdminDashboard = () => {
                 id: document.getElementById('sbTeamId').value || undefined,
                 name: document.getElementById('sbTeamName').value.trim(),
                 color: document.getElementById('sbTeamColor').value,
-                icon: document.getElementById('sbTeamIcon').value,
+                icon: document.getElementById('sbTeamIcon') ? document.getElementById('sbTeamIcon').value : undefined,
                 points: document.getElementById('sbTeamPoints').value !== '' ? Number(document.getElementById('sbTeamPoints').value) : undefined
             };
 
@@ -2857,7 +2915,7 @@ const initAdminDashboard = () => {
                 document.getElementById('sbTeamId').value = team.id;
                 document.getElementById('sbTeamName').value = team.name;
                 document.getElementById('sbTeamColor').value = team.color || '#198754';
-                document.getElementById('sbTeamIcon').value = team.icon || 'bi-trophy-fill';
+                if (document.getElementById('sbTeamIcon')) document.getElementById('sbTeamIcon').value = team.icon || 'bi-trophy-fill';
                 document.getElementById('sbTeamPoints').value = team.points !== undefined ? team.points : '';
                 const cancelBtn = document.getElementById('sbTeamCancelBtn');
                 if (cancelBtn) cancelBtn.style.display = 'inline-block';

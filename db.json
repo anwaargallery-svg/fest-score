@@ -30,71 +30,14 @@
   "siteContent": {},
   "messages": [],
   "settings": {
-    "admissionsOpen": true
+    "admissionsOpen": false
   },
   "news": [],
   "scoreboard": {
     "enabled": true,
-    "festTitle": "anwariyya sarggolthav 2026",
-    "festStatus": "Completed",
-    "teams": [
-      {
-        "id": "team-1790515614280",
-        "name": "kafah",
-        "color": "#198754",
-        "icon": "bi-award-fill",
-        "points": 5
-      },
-      {
-        "id": "team-1790515621697",
-        "name": "sabath",
-        "color": "#198754",
-        "icon": "bi-award",
-        "points": 4
-      },
-      {
-        "id": "team-1790515588281",
-        "name": "sabath",
-        "color": "#ff0000",
-        "icon": "bi-trophy-fill",
-        "points": 0
-      },
-      {
-        "id": "team-1790515596737",
-        "name": "sumood",
-        "color": "#198754",
-        "icon": "bi-star-fill",
-        "points": 0
-      }
-    ],
-    "results": [
-      {
-        "id": "res-1790532370481",
-        "eventName": "typing",
-        "category": "Super Senior",
-        "first": {
-          "name": "re",
-          "chestNo": "2020",
-          "team": "kafah",
-          "grade": "",
-          "points": 5
-        },
-        "second": {
-          "name": "df",
-          "chestNo": "56",
-          "team": "sabath",
-          "grade": "",
-          "points": 3
-        },
-        "third": {
-          "name": "dsf",
-          "chestNo": "562",
-          "team": "sabath",
-          "grade": "",
-          "points": 1
-        },
-        "updatedAt": "2026-09-27T18:06:10.481Z"
-      }
-    ]
+    "festTitle": "ATSA Arts Fest 2026",
+    "festStatus": "Live",
+    "teams": [],
+    "results": []
   }
 }

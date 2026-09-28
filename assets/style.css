@@ -183,44 +183,10 @@ body.scoreboard-fullscreen-mode #scoreboard .table tbody tr:hover td {
     background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* Event Programme Results - Horizontal Moving & Scrolling Track */
-.fest-horizontal-track {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    gap: 1.25rem;
-    padding: 0.5rem 0.25rem 1.25rem 0.25rem;
-    scrollbar-width: thin;
-    scrollbar-color: #ffc107 rgba(0, 0, 0, 0.1);
-    cursor: grab;
-}
-
-.fest-horizontal-track:active {
-    cursor: grabbing;
-}
-
-.fest-horizontal-track::-webkit-scrollbar {
-    height: 6px;
-}
-.fest-horizontal-track::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.08);
-    border-radius: 10px;
-}
-.fest-horizontal-track::-webkit-scrollbar-thumb {
-    background: #ffc107;
-    border-radius: 10px;
-}
-.fest-horizontal-track::-webkit-scrollbar-thumb:hover {
-    background: #e0a800;
-}
-
-.fest-horizontal-track > div,
-.fest-horizontal-track > .fest-card-item {
-    flex: 0 0 auto !important;
-    width: 350px !important;
-    max-width: 85vw !important;
+/* Event Programme Results - Grid Container & Flat Card Styling */
+.fest-cards-grid-container {
+    width: 100%;
+    margin: 0 auto;
 }
 
 .fest-scroll-arrow-btn {
@@ -242,4 +208,222 @@ body.scoreboard-fullscreen-mode #scoreboard .table tbody tr:hover td {
     transform: translateY(-50%) scale(1.1) !important;
     box-shadow: 0 0 15px rgba(255, 193, 7, 0.5) !important;
 }
+
+/* --- MINIMALIST FLAT SCOREBOARD CARD SYSTEM --- */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+#scoreboard {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+  position: relative;
+}
+
+/* Minimal Flat Card Base */
+.flat-card, .scoreboard-glass-card {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.flat-card:hover, .scoreboard-glass-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06) !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Card Set Change Staggered Entrance Animation */
+@keyframes festCardSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.fest-card-anim {
+  animation: festCardSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Flat Rank Winner Rows inside Event Cards */
+.flat-rank-row {
+  background-color: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  transition: all 0.2s ease;
+}
+
+.flat-rank-row-1st {
+  background-color: #fffbeb !important;
+  border: 1px solid #fde68a !important;
+}
+
+.flat-rank-row-2nd {
+  background-color: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.flat-rank-row-3rd {
+  background-color: #fff7ed !important;
+  border: 1px solid #ffedd5 !important;
+}
+
+/* 1st Prize Badge (Vibrant Gold) */
+.flat-badge-1st {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: #ffffff !important;
+  border: 1px solid #b45309 !important;
+  font-weight: 800;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.25);
+}
+
+/* 2nd Prize Badge (Vibrant Silver) */
+.flat-badge-2nd {
+  background: linear-gradient(135deg, #64748b, #475569) !important;
+  color: #ffffff !important;
+  border: 1px solid #334155 !important;
+  font-weight: 800;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 4px rgba(71, 85, 105, 0.2);
+}
+
+/* 3rd Prize Badge (Vibrant Bronze) */
+.flat-badge-3rd {
+  background: linear-gradient(135deg, #ea580c, #c2410c) !important;
+  color: #ffffff !important;
+  border: 1px solid #9a3412 !important;
+  font-weight: 800;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 4px rgba(194, 65, 12, 0.2);
+}
+
+/* Prize Points Badges */
+.pts-badge-1st {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border: 1px solid #fde68a !important;
+}
+
+.pts-badge-2nd {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.pts-badge-3rd {
+  background-color: #ffedd5 !important;
+  color: #c2410c !important;
+  border: 1px solid #fed7aa !important;
+}
+
+.flat-tag {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  font-size: 0.775rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+/* Distinct Larger Tags for Chest Number, Team Name & Grade */
+.flat-tag-chest {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #020617 !important;
+  font-size: 0.825rem !important;
+  font-weight: 800 !important;
+  padding: 3px 9px !important;
+  border-radius: 6px !important;
+  display: inline-block;
+  letter-spacing: 0.3px;
+}
+
+.flat-tag-team {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border: 1px solid #1d4ed8 !important;
+  font-size: 0.825rem !important;
+  font-weight: 800 !important;
+  padding: 3px 9px !important;
+  border-radius: 6px !important;
+  display: inline-block;
+  text-transform: capitalize;
+}
+
+.flat-tag-grade {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+  border: 1px solid #047857 !important;
+  font-size: 0.8rem !important;
+  font-weight: 800 !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  display: inline-block;
+}
+
+/* Live Pulse Indicator */
+.fest-live-pulse-dot, .live-pulse {
+  width: 9px;
+  height: 9px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  display: inline-block;
+  animation: livePulseAnim 1.5s infinite ease-in-out;
+}
+
+@keyframes livePulseAnim {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Scoreboard Table Styling */
+.scoreboard-table, .custom-table {
+  color: #1e293b !important;
+  margin-bottom: 0;
+}
+
+.scoreboard-table thead th, .custom-table thead th {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0 !important;
+  padding: 0.85rem 1rem !important;
+}
+
+.scoreboard-table tbody tr, .custom-table tbody tr {
+  border-bottom: 1px solid #f1f5f9 !important;
+  transition: background-color 0.15s ease;
+}
+
+.scoreboard-table tbody tr:hover, .custom-table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+.scoreboard-table tbody td, .custom-table tbody td {
+  padding: 0.85rem 1rem !important;
+  vertical-align: middle;
+}
+
 

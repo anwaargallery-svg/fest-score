@@ -768,6 +768,21 @@
                                         </select>
                                     </div>
                                     <div class="col-12">
+                                        <label class="form-label fw-semibold"><i class="bi bi-image me-1"></i>Fest Logo</label>
+                                        <input type="hidden" id="sbFestLogoInput">
+                                        <div class="d-flex flex-wrap align-items-center gap-3">
+                                            <div id="sbFestLogoPreviewWrapper" class="p-2 border rounded bg-light text-center" style="min-width: 100px; min-height: 70px;">
+                                                <img id="sbFestLogoPreview" src="" alt="Fest Logo Preview" style="max-height: 60px; max-width: 120px; display: none;">
+                                                <small id="sbFestLogoPlaceholder" class="text-muted d-block py-2">No logo set</small>
+                                            </div>
+                                            <div>
+                                                <input type="file" class="form-control form-control-sm mb-2" id="sbFestLogoFileInput" accept="image/*">
+                                                <button type="button" class="btn btn-outline-danger btn-sm" id="removeSbFestLogoBtn"><i class="bi bi-trash me-1"></i>Remove Logo</button>
+                                            </div>
+                                        </div>
+                                        <div class="form-text">Upload official logo of the fest (PNG/JPG/SVG). Logo will be displayed on Home Page and TV Stage View.</div>
+                                    </div>
+                                    <div class="col-12">
                                         <div class="form-check form-switch mt-2">
                                             <input class="form-check-input" type="checkbox" role="switch" id="sbEnableSwitch" checked>
                                             <label class="form-check-label fw-bold text-dark" for="sbEnableSwitch">Enable & Display Scoreboard on Public Website</label>
@@ -791,22 +806,9 @@
                                             <label class="form-label fw-semibold">Team / House Name *</label>
                                             <input type="text" class="form-control" id="sbTeamName" placeholder="e.g. Emeralds, Rubies" required>
                                         </div>
-                                        <div class="row g-2 mb-3">
-                                            <div class="col-6">
-                                                <label class="form-label fw-semibold">Team Theme Color</label>
-                                                <input type="color" class="form-control form-control-color w-100" id="sbTeamColor" value="#198754">
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="form-label fw-semibold">Icon</label>
-                                                <select class="form-select" id="sbTeamIcon">
-                                                    <option value="bi-trophy-fill">Trophy</option>
-                                                    <option value="bi-award-fill">Medal / Award</option>
-                                                    <option value="bi-star-fill">Star</option>
-                                                    <option value="bi-shield-shaded">Shield</option>
-                                                    <option value="bi-fire">Fire</option>
-                                                    <option value="bi-lightning-fill">Lightning</option>
-                                                </select>
-                                            </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Team Theme Color</label>
+                                            <input type="color" class="form-control form-control-color w-100" id="sbTeamColor" value="#198754">
                                         </div>
                                         <div class="mb-3">
                                             <label class="form-label fw-semibold">Manual Base Points Override (Optional)</label>
