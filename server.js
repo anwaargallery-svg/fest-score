@@ -9,8 +9,8 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); // To parse large JSON bodies like Base64 images
-app.use(express.urlencoded({ limit: '10mb', extended: true })); // To parse large URL-encoded bodies
+app.use(express.json({ limit: '50mb' })); // To parse large JSON bodies like Base64 images
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // To parse large URL-encoded bodies
 app.use(express.static(__dirname)); // Serve your HTML/CSS/JS files from the root directory
 
 // Configure Multer to store files in memory as buffers
@@ -78,7 +78,12 @@ function getInitialScoreboard() {
         third: { name: "Sameer V.P.", chestNo: "C-319", team: "Rubies", grade: "B Grade", points: 5 },
         updatedAt: new Date().toISOString()
       }
-    ]
+    ],
+    announcement: {
+      active: false,
+      stage: "none",
+      updatedAt: new Date().toISOString()
+    }
   };
 }
 
@@ -111,20 +116,38 @@ function recalculateScoreboardPoints() {
 }
 
 function saveDb() {
-  // Ensure settings are initialized
-  if (!db.settings) db.settings = { admissionsOpen: true };
-  if (!db.messages) db.messages = [];
-  if (!db.news) db.news = [];
-  if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
-  
-  fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
+  try {
+    // Ensure all data structures exist
+    if (!db.students) db.students = [];
+    if (!db.results) db.results = [];
+    if (!db.admissions) db.admissions = [];
+    if (!db.gallery) db.gallery = [];
+    if (!db.siteContent) db.siteContent = {};
+    if (!db.messages) db.messages = [];
+    if (!db.news) db.news = [];
+    if (!db.settings) db.settings = { admissionsOpen: true };
+    if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
+
+    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Error writing to db.json:', e);
+  }
 }
 
-// Initial check on server load
+// Ensure initial save on server load
 if (!db.scoreboard) {
   db.scoreboard = getInitialScoreboard();
-  saveDb();
 }
+saveDb();
+
+// Persist data on process termination signals
+['SIGINT', 'SIGTERM'].forEach(signal => {
+  process.on(signal, () => {
+    console.log(`Received ${signal}. Flushing data to db.json before exit...`);
+    saveDb();
+    process.exit(0);
+  });
+});
 
 // ==========================================
 // API ENDPOINTS
@@ -288,6 +311,107 @@ app.post('/api/admin/student', (req, res) => {
     }
     saveDb();
     res.json({ success: true, message: 'Student data saved successfully.' });
+});
+
+// Endpoint for admin to delete a student
+app.delete('/api/admin/student/:enrollNo', (req, res) => {
+    const { enrollNo } = req.params;
+    if (!db.students) db.students = [];
+    const initialLen = db.students.length;
+    db.students = db.students.filter(s => String(s.EnrollNo) !== String(enrollNo));
+    if (db.students.length < initialLen) {
+        saveDb();
+        res.json({ success: true, message: `Student #${enrollNo} deleted successfully.` });
+    } else {
+        res.status(404).json({ success: false, message: 'Student not found.' });
+    }
+});
+
+// Endpoint for admin to update admission status
+app.post('/api/admin/admission/status', (req, res) => {
+    const { applicationId, status } = req.body;
+    if (!applicationId || !status) {
+        return res.status(400).json({ success: false, message: 'Application ID and status required.' });
+    }
+    if (!db.admissions) db.admissions = [];
+    const adm = db.admissions.find(a => String(a.applicationId) === String(applicationId));
+    if (adm) {
+        adm.status = status;
+        saveDb();
+        res.json({ success: true, message: `Admission application ${applicationId} status updated to ${status}.`, admissions: db.admissions });
+    } else {
+        res.status(404).json({ success: false, message: 'Admission application not found.' });
+    }
+});
+
+// Endpoint for admin to delete an admission application
+app.delete('/api/admin/admission/:applicationId', (req, res) => {
+    const { applicationId } = req.params;
+    if (!db.admissions) db.admissions = [];
+    const initialLen = db.admissions.length;
+    db.admissions = db.admissions.filter(a => String(a.applicationId) !== String(applicationId));
+    if (db.admissions.length < initialLen) {
+        saveDb();
+        res.json({ success: true, message: 'Admission record deleted successfully.' });
+    } else {
+        res.status(404).json({ success: false, message: 'Admission record not found.' });
+    }
+});
+
+// Endpoint for admin gallery management
+app.post('/api/admin/gallery', upload.single('photo'), (req, res) => {
+    const { title, category } = req.body;
+    let photoData = req.body.photo || null;
+    if (req.file) {
+        photoData = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    }
+    if (!photoData) {
+        return res.status(400).json({ success: false, message: 'Image photo data is required.' });
+    }
+    if (!db.gallery) db.gallery = [];
+    const newItem = {
+        id: `gal-${Date.now()}`,
+        title: title || 'Gallery Image',
+        category: category || 'General',
+        photo: photoData,
+        createdAt: new Date().toISOString()
+    };
+    db.gallery.push(newItem);
+    saveDb();
+    res.json({ success: true, message: 'Gallery item added successfully.', item: newItem, gallery: db.gallery });
+});
+
+app.delete('/api/admin/gallery/:id', (req, res) => {
+    const { id } = req.params;
+    if (!db.gallery) db.gallery = [];
+    const initialLen = db.gallery.length;
+    db.gallery = db.gallery.filter(g => String(g.id) !== String(id));
+    if (db.gallery.length < initialLen) {
+        saveDb();
+        res.json({ success: true, message: 'Gallery item deleted successfully.' });
+    } else {
+        res.status(404).json({ success: false, message: 'Gallery item not found.' });
+    }
+});
+
+// Endpoint for admin to update site content
+app.post('/api/admin/site-content', (req, res) => {
+    const contentData = req.body;
+    if (!db.siteContent) db.siteContent = {};
+    db.siteContent = { ...db.siteContent, ...contentData };
+    saveDb();
+    res.json({ success: true, message: 'Site content updated and saved to backend.', siteContent: db.siteContent });
+});
+
+app.delete('/api/admin/site-content/:id', (req, res) => {
+    const { id } = req.params;
+    if (db.siteContent && db.siteContent[id]) {
+        delete db.siteContent[id];
+        saveDb();
+        res.json({ success: true, message: 'Content section deleted successfully.' });
+    } else {
+        res.status(404).json({ success: false, message: 'Content section not found.' });
+    }
 });
 
 // Endpoint for admin to add/update a news item
@@ -548,21 +672,50 @@ app.get('/api/scoreboard', (req, res) => {
 
 // Admin: Update Scoreboard Settings
 app.post('/api/admin/scoreboard/settings', (req, res) => {
-  const { enabled, festTitle, festStatus, festLogo } = req.body;
+  const { enabled, festTitle, festStatus, festLogo, festTypography, showGrandTotal } = req.body;
   if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
   
   if (typeof enabled === 'boolean') db.scoreboard.enabled = enabled;
   if (festTitle !== undefined) db.scoreboard.festTitle = festTitle;
   if (festStatus !== undefined) db.scoreboard.festStatus = festStatus;
   if (festLogo !== undefined) db.scoreboard.festLogo = festLogo;
+  if (festTypography !== undefined) db.scoreboard.festTypography = festTypography;
+  if (typeof showGrandTotal === 'boolean') db.scoreboard.showGrandTotal = showGrandTotal;
   
   saveDb();
   res.json({ success: true, message: 'Scoreboard settings updated.', scoreboard: db.scoreboard });
 });
 
+// Admin: Trigger / Update Grand Winner Announcement Stage
+app.post('/api/admin/scoreboard/announcement', (req, res) => {
+  const { active, stage } = req.body;
+  if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
+
+  db.scoreboard.announcement = {
+    active: active === true,
+    stage: stage || 'none',
+    updatedAt: new Date().toISOString()
+  };
+
+  saveDb();
+  const stageLabels = {
+    '3rd': '2nd Runner Up (3rd Place)',
+    '2nd': '1st Runner Up (2nd Place)',
+    '1st': 'Overall Grand Champions (1st Place)',
+    'all': 'Grand Overall Championship Ceremony',
+    'none': 'Announcement Overlay Closed'
+  };
+  const label = stageLabels[stage] || stage || 'Closed';
+  res.json({
+    success: true,
+    message: active ? `Live Winner Announcement: ${label} Activated!` : 'Winner Announcement overlay closed.',
+    scoreboard: db.scoreboard
+  });
+});
+
 // Admin: Add or Edit Team
 app.post('/api/admin/scoreboard/team', (req, res) => {
-  const { id, name, color, icon, points } = req.body;
+  const { id, name, color, icon, points, codeRange } = req.body;
   if (!name) return res.status(400).json({ success: false, message: 'Team name is required.' });
   if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
 
@@ -574,6 +727,7 @@ app.post('/api/admin/scoreboard/team', (req, res) => {
         name,
         color: color || '#198754',
         icon: icon || 'bi-trophy-fill',
+        codeRange: codeRange !== undefined ? codeRange : (db.scoreboard.teams[teamIndex].codeRange || ''),
         points: points !== undefined ? Number(points) : db.scoreboard.teams[teamIndex].points
       };
     } else {
@@ -585,6 +739,7 @@ app.post('/api/admin/scoreboard/team', (req, res) => {
       name,
       color: color || '#198754',
       icon: icon || 'bi-trophy-fill',
+      codeRange: codeRange || '',
       points: points ? Number(points) : 0
     };
     db.scoreboard.teams.push(newTeam);
@@ -593,6 +748,28 @@ app.post('/api/admin/scoreboard/team', (req, res) => {
   recalculateScoreboardPoints();
   saveDb();
   res.json({ success: true, message: 'Team saved successfully.', scoreboard: db.scoreboard });
+});
+
+// Admin: Save Bulk Group Code Ranges
+app.post('/api/admin/scoreboard/coderanges', (req, res) => {
+  const { teamRanges, categoryRanges } = req.body;
+  if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
+
+  if (Array.isArray(teamRanges)) {
+    teamRanges.forEach(tr => {
+      const team = db.scoreboard.teams.find(t => String(t.id) === String(tr.id) || t.name.toLowerCase() === String(tr.name || '').toLowerCase());
+      if (team) {
+        team.codeRange = tr.codeRange || '';
+      }
+    });
+  }
+
+  if (categoryRanges && typeof categoryRanges === 'object') {
+    db.scoreboard.categoryRanges = categoryRanges;
+  }
+
+  saveDb();
+  res.json({ success: true, message: 'Group code ranges saved successfully.', scoreboard: db.scoreboard });
 });
 
 // Admin: Delete Team
@@ -609,12 +786,28 @@ app.delete('/api/admin/scoreboard/team/:id', (req, res) => {
 // Admin: Add or Edit Event Result
 app.post('/api/admin/scoreboard/result', (req, res) => {
   const { id, eventName, category, first, second, third } = req.body;
-  if (!eventName) return res.status(400).json({ success: false, message: 'Event name is required.' });
+  if (!eventName || !eventName.trim()) return res.status(400).json({ success: false, message: 'Event programme name is required.' });
   if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
+
+  const targetName = eventName.trim().toLowerCase();
+  const targetCategory = (category || 'General').trim().toLowerCase();
+
+  const isDuplicate = (db.scoreboard.results || []).some(r => 
+    String(r.id) !== String(id || '') &&
+    r.eventName && r.eventName.trim().toLowerCase() === targetName &&
+    (r.category || 'General').trim().toLowerCase() === targetCategory
+  );
+
+  if (isDuplicate) {
+    return res.status(400).json({
+      success: false,
+      message: `A result for programme "${eventName.trim()}" in category "${category || 'General'}" already exists! Duplicate uploads are not allowed.`
+    });
+  }
 
   const resultData = {
     id: id || `res-${Date.now()}`,
-    eventName,
+    eventName: eventName.trim(),
     category: category || 'General',
     first: first || { name: '', team: '', points: 0 },
     second: second || { name: '', team: '', points: 0 },
@@ -657,6 +850,100 @@ app.post('/api/admin/scoreboard/recalculate', (req, res) => {
   res.json({ success: true, message: 'Team standings recalculated successfully.', scoreboard: db.scoreboard });
 });
 
+// Admin: Export Fest Scoreboard Data (JSON)
+app.get('/api/admin/scoreboard/export', (req, res) => {
+  if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
+  recalculateScoreboardPoints();
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Disposition', 'attachment; filename="fest_scoreboard_export.json"');
+  res.send(JSON.stringify(db.scoreboard, null, 2));
+});
+
+// Admin: Import Fest Scoreboard Bulk Data (JSON)
+app.post('/api/admin/scoreboard/import', (req, res) => {
+  try {
+    const { teams, results, festTitle, festStatus, festLogo, showGrandTotal } = req.body;
+    if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
+
+    function findTeamByChest(chestNo, teamsList) {
+      if (!chestNo || !Array.isArray(teamsList)) return '';
+      const num = parseInt(String(chestNo).trim(), 10);
+      if (isNaN(num)) return '';
+      for (const t of teamsList) {
+        if (t.codeRange) {
+          const parts = t.codeRange.split('-').map(p => parseInt(p.trim(), 10));
+          if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            if (num >= parts[0] && num <= parts[1]) {
+              return t.name;
+            }
+          }
+        }
+      }
+      return '';
+    }
+
+    function sanitizeWinnerObj(w, teamsList) {
+      if (!w) return { name: '', team: '', points: 0 };
+      if (Array.isArray(w)) {
+        return w.map(item => sanitizeWinnerObj(item, teamsList));
+      }
+      const chest = w.chestNo || w.chest || w.chestNumber || '';
+      let team = w.team || w.group || w.groupName || '';
+      if (!team && chest) {
+        team = findTeamByChest(chest, teamsList);
+      }
+      return {
+        name: w.name || w.studentName || w.student || '',
+        chestNo: chest,
+        team: team,
+        grade: w.grade || w.rankGrade || '',
+        points: w.points !== undefined ? Number(w.points) : (w.pts !== undefined ? Number(w.pts) : 0)
+      };
+    }
+
+    if (Array.isArray(teams)) {
+      db.scoreboard.teams = teams.map((t, index) => ({
+        id: t.id || `team-${Date.now()}-${index}`,
+        name: t.name || t.team || `Team ${index + 1}`,
+        color: t.color || '#198754',
+        codeRange: t.codeRange || '',
+        icon: t.icon || 'bi-trophy-fill',
+        points: Number(t.points) || 0
+      }));
+    }
+
+    if (Array.isArray(results)) {
+      const activeTeams = db.scoreboard.teams || [];
+      db.scoreboard.results = results.map((r, index) => ({
+        id: r.id || `res-${Date.now()}-${index}`,
+        eventName: r.eventName || r.event || 'Unnamed Event',
+        category: r.category || 'General',
+        first: sanitizeWinnerObj(r.first, activeTeams),
+        second: sanitizeWinnerObj(r.second, activeTeams),
+        third: sanitizeWinnerObj(r.third, activeTeams),
+        updatedAt: r.updatedAt || new Date().toISOString()
+      }));
+    }
+
+    if (festTitle !== undefined) db.scoreboard.festTitle = festTitle;
+    if (festStatus !== undefined) db.scoreboard.festStatus = festStatus;
+    if (festLogo !== undefined) db.scoreboard.festLogo = festLogo;
+    if (festTypography !== undefined) db.scoreboard.festTypography = festTypography;
+    if (typeof showGrandTotal === 'boolean') db.scoreboard.showGrandTotal = showGrandTotal;
+
+    recalculateScoreboardPoints();
+    saveDb();
+    res.json({
+      success: true,
+      message: `Successfully imported ${teams ? teams.length : 0} teams and ${results ? results.length : 0} event results.`,
+      scoreboard: db.scoreboard
+    });
+  } catch (err) {
+    console.error('Import Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to import bulk scoreboard data.' });
+  }
+});
+
 // Admin: Reset Scoreboard Data
 app.post('/api/admin/scoreboard/reset', (req, res) => {
   db.scoreboard = getInitialScoreboard();
@@ -668,9 +955,8 @@ app.post('/api/admin/scoreboard/reset', (req, res) => {
 // Export the app for serverless environments like Vercel
 module.exports = app;
 
-// Start the server only when run directly (for local development)
-if (require.main === module) {
-  const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
+if (require.main === module || !module.parent) {
   app.listen(PORT, () => {
     console.log(`Server is running for local development on http://localhost:${PORT}`);
   });

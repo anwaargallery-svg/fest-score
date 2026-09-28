@@ -1257,20 +1257,18 @@ const initAdminDashboard = () => {
         // Handle Delete Gallery Image
         if (deleteGalleryBtn) {
             const id = deleteGalleryBtn.getAttribute('data-id');
-            // This action should be a server call
             if (confirm('Are you sure you want to delete this image?')) {
-                // Example: await fetch(getApiUrl(`/api/admin/gallery/${id}`), { method: 'DELETE' });
-                window.showSnackbar('Image deletion is not fully implemented on the server yet.');
-                /*
-                localStorage.setItem('anwariyya_gallery_db', JSON.stringify(db));
-                loadAdminGallery();
-                window.showSnackbar(`Image deleted from ${deletedImg.category.toUpperCase()} gallery.`, () => {
-                    let currentDb = JSON.parse(localStorage.getItem('anwariyya_gallery_db')) || [];
-                    currentDb.splice(idx, 0, deletedImg);
-                    localStorage.setItem('anwariyya_gallery_db', JSON.stringify(currentDb));
-                    loadAdminGallery(); window.showSnackbar('Gallery deletion undone.');
-                });
-                */
+                fetch(getApiUrl(`/api/admin/gallery/${id}`), { method: 'DELETE' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.showSnackbar('Gallery image deleted successfully from server.');
+                            loadAdminGallery();
+                        } else {
+                            window.showSnackbar(data.message || 'Failed to delete gallery image.');
+                        }
+                    })
+                    .catch(() => window.showSnackbar('Error deleting gallery image from server.'));
             }
         }
 
@@ -1308,8 +1306,17 @@ const initAdminDashboard = () => {
         if (deleteContentBtn) {
             const id = deleteContentBtn.getAttribute('data-id');
             if (confirm('Are you sure you want to delete this section?')) {
-                // Example: await fetch(getApiUrl(`/api/admin/content/${id}`), { method: 'DELETE' });
-                window.showSnackbar('Content deletion is not fully implemented on the server yet.');
+                fetch(getApiUrl(`/api/admin/site-content/${id}`), { method: 'DELETE' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.showSnackbar('Content section deleted from server.');
+                            if (typeof loadAdminContent === 'function') loadAdminContent();
+                        } else {
+                            window.showSnackbar(data.message || 'Failed to delete content section.');
+                        }
+                    })
+                    .catch(() => window.showSnackbar('Error communicating with server.'));
             }
         }
         // Handle Delete Subject
@@ -1928,19 +1935,24 @@ const initAdminDashboard = () => {
     // --- Site Content (About Us) Management ---
     const aboutUsForm = document.getElementById('aboutUsForm');
     if (aboutUsForm) {
-        // Load existing data
-        const storedAbout = JSON.parse(localStorage.getItem('anwariyya_about_content'));
         const aboutImagePreview = document.getElementById('aboutImagePreview');
+        let currentAboutData = null;
         
-        if (storedAbout) {
-            if (storedAbout.title) document.getElementById('aboutTitleInput').value = storedAbout.title;
-            if (storedAbout.subtitle) document.getElementById('aboutSubtitleInput').value = storedAbout.subtitle;
-            if (storedAbout.description) document.getElementById('aboutDescInput').value = storedAbout.description;
-            if (storedAbout.image) {
-                aboutImagePreview.src = storedAbout.image;
-                aboutImagePreview.style.display = 'block';
-            }
-        }
+        fetch(getApiUrl('/api/admin/data'))
+            .then(res => res.json())
+            .then(data => {
+                currentAboutData = data.siteContent?.aboutUs || null;
+                if (currentAboutData) {
+                    if (currentAboutData.title) document.getElementById('aboutTitleInput').value = currentAboutData.title;
+                    if (currentAboutData.subtitle) document.getElementById('aboutSubtitleInput').value = currentAboutData.subtitle;
+                    if (currentAboutData.description) document.getElementById('aboutDescInput').value = currentAboutData.description;
+                    if (currentAboutData.image) {
+                        aboutImagePreview.src = currentAboutData.image;
+                        aboutImagePreview.style.display = 'block';
+                    }
+                }
+            })
+            .catch(() => {});
 
         // Handle Image Selection and Preview
         document.getElementById('aboutImageInput').addEventListener('change', function(e) {
@@ -1961,39 +1973,44 @@ const initAdminDashboard = () => {
                 title: document.getElementById('aboutTitleInput').value.trim(),
                 subtitle: document.getElementById('aboutSubtitleInput').value.trim(),
                 description: document.getElementById('aboutDescInput').value.trim(),
-                image: aboutImagePreview.src && aboutImagePreview.src.includes('data:image') ? aboutImagePreview.src : (storedAbout ? storedAbout.image : '')
+                image: aboutImagePreview.src && aboutImagePreview.src.includes('data:image') ? aboutImagePreview.src : (currentAboutData ? currentAboutData.image : '')
             };
             
-            localStorage.setItem('anwariyya_about_content', JSON.stringify(newContent));
-            window.showSnackbar("About Us content updated successfully! Changes will reflect on the home page.");
+            fetch(getApiUrl('/api/admin/site-content'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ aboutUs: newContent })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    currentAboutData = newContent;
+                    window.showSnackbar("About Us content updated and saved to server database!");
+                } else {
+                    window.showSnackbar(data.message || "Failed to update About Us content on server.");
+                }
+            })
+            .catch(() => window.showSnackbar("Error communicating with server database."));
         });
 
         // Handle Drop 'About Us' Content
         const dropAboutUsBtn = document.getElementById('dropAboutUsBtn');
         if (dropAboutUsBtn) {
             dropAboutUsBtn.addEventListener('click', () => {
-                const backup = localStorage.getItem('anwariyya_about_content');
-                if (!backup) {
-                    window.showSnackbar("No custom About Us content to drop.");
-                    return;
-                }
+                if (!confirm("Are you sure you want to drop custom About Us content?")) return;
                 
-                localStorage.removeItem('anwariyya_about_content');
-                aboutUsForm.reset();
-                document.getElementById('aboutImagePreview').style.display = 'none';
-                document.getElementById('aboutImagePreview').src = '';
-                
-                window.showSnackbar("About Us content dropped. Reverted to default.", () => {
-                    localStorage.setItem('anwariyya_about_content', backup);
-                    const restored = JSON.parse(backup);
-                    if (restored.title) document.getElementById('aboutTitleInput').value = restored.title;
-                    if (restored.subtitle) document.getElementById('aboutSubtitleInput').value = restored.subtitle;
-                    if (restored.description) document.getElementById('aboutDescInput').value = restored.description;
-                    if (restored.image) {
-                        document.getElementById('aboutImagePreview').src = restored.image;
-                        document.getElementById('aboutImagePreview').style.display = 'block';
-                    }
-                    window.showSnackbar("About Us content restored.");
+                fetch(getApiUrl('/api/admin/site-content'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ aboutUs: null })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    aboutUsForm.reset();
+                    document.getElementById('aboutImagePreview').style.display = 'none';
+                    document.getElementById('aboutImagePreview').src = '';
+                    currentAboutData = null;
+                    window.showSnackbar("About Us content dropped from server.");
                 });
             });
         }
@@ -2124,28 +2141,32 @@ const initAdminDashboard = () => {
         `).join('');
         grid.innerHTML = skeletonHTML;
 
-        setTimeout(() => {
-            const galleryDB = JSON.parse(localStorage.getItem('anwariyya_gallery_db')) || [];
-            
-            if (galleryDB.length === 0) {
-                grid.innerHTML = '<div class="col-12 text-center text-muted py-4">No images currently in gallery.</div>';
-                return;
-            }
-            
-            let html = '';
-            galleryDB.forEach(img => {
-                html += `
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <div class="card border-0 shadow-sm h-100 position-relative overflow-hidden rounded-3">
-                            <img src="${img.image}" class="card-img-top w-100" style="height: 150px; object-fit: cover;" alt="Gallery Image">
-                            <span class="position-absolute top-0 start-0 badge bg-dark m-2 text-uppercase opacity-75">${img.category}</span>
-                            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 action-delete-gallery shadow" data-id="${img.id}"><i class="bi bi-trash-fill"></i></button>
+        fetch(getApiUrl('/api/admin/data'))
+            .then(res => res.json())
+            .then(data => {
+                const galleryDB = data.gallery || [];
+                if (galleryDB.length === 0) {
+                    grid.innerHTML = '<div class="col-12 text-center text-muted py-4">No images currently in gallery.</div>';
+                    return;
+                }
+                
+                let html = '';
+                galleryDB.forEach(img => {
+                    html += `
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <div class="card border-0 shadow-sm h-100 position-relative overflow-hidden rounded-3">
+                                <img src="${img.photo || img.image}" class="card-img-top w-100" style="height: 150px; object-fit: cover;" alt="Gallery Image">
+                                <span class="position-absolute top-0 start-0 badge bg-dark m-2 text-uppercase opacity-75">${img.category || 'General'}</span>
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 action-delete-gallery shadow" data-id="${img.id}"><i class="bi bi-trash-fill"></i></button>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                });
+                grid.innerHTML = html;
+            })
+            .catch(err => {
+                grid.innerHTML = '<div class="col-12 text-center text-danger py-4">Failed to load gallery from server.</div>';
             });
-            grid.innerHTML = html;
-        }, 300);
     }
     loadAdminGallery(); // Load on init
 
@@ -2160,33 +2181,31 @@ const initAdminDashboard = () => {
             
             if (files.length === 0) return;
 
-            let galleryDB = JSON.parse(localStorage.getItem('anwariyya_gallery_db')) || [];
             let uploadCount = 0;
             const totalFiles = files.length;
 
             Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    galleryDB.push({
-                        id: Date.now() + Math.random().toString(36).substring(2, 9),
-                        category: category,
-                        image: event.target.result,
-                        date: new Date().toISOString()
-                    });
-                    
+                const formData = new FormData();
+                formData.append('photo', file);
+                formData.append('title', file.name || 'Gallery Photo');
+                formData.append('category', category);
+
+                fetch(getApiUrl('/api/admin/gallery'), {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(res => {
                     uploadCount++;
                     if (uploadCount === totalFiles) {
-                        try {
-                            localStorage.setItem('anwariyya_gallery_db', JSON.stringify(galleryDB));
-                            window.showSnackbar(`Successfully uploaded ${totalFiles} image(s) to ${category.toUpperCase()} gallery.`);
-                        } catch(err) {
-                            window.showSnackbar("Upload Failed: Browser storage limit exceeded! Try compressing your images.");
-                        }
+                        window.showSnackbar(`Successfully uploaded ${totalFiles} image(s) to ${category.toUpperCase()} gallery on server.`);
                         galleryUploadForm.reset();
                         loadAdminGallery();
                     }
-                };
-                reader.readAsDataURL(file);
+                })
+                .catch(err => {
+                    window.showSnackbar("Upload Failed: Could not save image to server database.");
+                });
             });
         });
     }
@@ -2553,24 +2572,117 @@ const initAdminDashboard = () => {
         return html;
     }
 
+    function autoDetectStudentByChest(chestVal) {
+        if (!chestVal) return null;
+        const val = String(chestVal).trim().toLowerCase();
+        if (!val) return null;
+
+        // 1. Search in uploaded/published scoreboard results
+        const results = (currentScoreboardData && currentScoreboardData.results) || [];
+        for (const res of results) {
+            const ranks = [res.first, res.second, res.third];
+            for (const r of ranks) {
+                if (!r) continue;
+                const list = Array.isArray(r) ? r : [r];
+                for (const item of list) {
+                    if (item && item.chestNo && String(item.chestNo).trim().toLowerCase() === val && item.name) {
+                        return { name: item.name, team: item.team || '' };
+                    }
+                }
+            }
+        }
+
+        // 2. Search in student database list if available
+        if (window.allStudentsData && Array.isArray(window.allStudentsData)) {
+            for (const s of window.allStudentsData) {
+                const sChest = String(s.chestNo || s.chest || s.EnrollNo || '').trim().toLowerCase();
+                if (sChest && sChest === val) {
+                    return { name: s.Name || s.name || '', team: s.team || s.houseName || '' };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    function autoDetectGroupFromChest(chestVal) {
+        if (!chestVal) return '';
+        const num = parseInt(String(chestVal).trim(), 10);
+        if (isNaN(num)) return '';
+
+        const teams = (currentScoreboardData && currentScoreboardData.teams) || [];
+        for (const t of teams) {
+            if (t.codeRange) {
+                const parts = t.codeRange.split('-').map(p => parseInt(p.trim(), 10));
+                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                    if (num >= parts[0] && num <= parts[1]) {
+                        return t.name;
+                    }
+                }
+            }
+        }
+        return '';
+    }
+
+    let activeMarkScheme = { first: 10, second: 7, third: 5 };
+
+    function applyMarkScheme(firstPts, secondPts, thirdPts, badgeText) {
+        activeMarkScheme = { first: Number(firstPts), second: Number(secondPts), third: Number(thirdPts) };
+        
+        const c1 = document.getElementById('fest1stWinnersContainer');
+        if (c1) {
+            c1.querySelectorAll('.winner-points').forEach(inp => inp.value = firstPts);
+        }
+        const c2 = document.getElementById('fest2ndWinnersContainer');
+        if (c2) {
+            c2.querySelectorAll('.winner-points').forEach(inp => inp.value = secondPts);
+        }
+        const c3 = document.getElementById('fest3rdWinnersContainer');
+        if (c3) {
+            c3.querySelectorAll('.winner-points').forEach(inp => inp.value = thirdPts);
+        }
+
+        const badge = document.getElementById('activeMarkSchemeBadge');
+        if (badge) {
+            badge.innerText = badgeText || `Active: +${firstPts}, +${secondPts}, +${thirdPts}`;
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.mark-scheme-btn');
+        if (btn) {
+            document.querySelectorAll('.mark-scheme-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const f = btn.getAttribute('data-1st');
+            const s = btn.getAttribute('data-2nd');
+            const t = btn.getAttribute('data-3rd');
+            applyMarkScheme(f, s, t, `Active: +${f}, +${s}, +${t}`);
+        }
+    });
+
     function createWinnerRow(place, w = {}, index = 0) {
-        const defaultPts = place === '1st' ? 10 : (place === '2nd' ? 7 : 5);
+        const defaultPts = place === '1st' ? activeMarkScheme.first : (place === '2nd' ? activeMarkScheme.second : activeMarkScheme.third);
         const pts = w.points !== undefined ? w.points : defaultPts;
         const name = w.name || '';
         const chestNo = w.chestNo || '';
-        const team = w.team || '';
+        let team = w.team || '';
         const grade = w.grade || '';
+
+        if (!team && chestNo) {
+            const detected = autoDetectGroupFromChest(chestNo);
+            if (detected) team = detected;
+        }
 
         const div = document.createElement('div');
         div.className = 'winner-row card card-body bg-light mb-2 p-2 position-relative border shadow-sm';
         div.innerHTML = `
             ${index > 0 ? `<button type="button" class="btn-close position-absolute top-0 end-0 m-2 remove-winner-btn" aria-label="Remove Winner" title="Remove Winner"></button>` : ''}
             <div class="row g-2 align-items-center">
-                <div class="col-md-3 col-6">
-                    <input type="text" class="form-control form-control-sm winner-name" placeholder="Student Name" value="${name}">
-                </div>
                 <div class="col-md-2 col-6">
                     <input type="text" class="form-control form-control-sm winner-chest" placeholder="Chest No" value="${chestNo}">
+                </div>
+                <div class="col-md-3 col-6">
+                    <input type="text" class="form-control form-control-sm winner-name" placeholder="Student Name" value="${name}">
                 </div>
                 <div class="col-md-3 col-6">
                     <select class="form-select form-select-sm festTeamSelect winner-team">
@@ -2585,6 +2697,43 @@ const initAdminDashboard = () => {
                 </div>
             </div>
         `;
+
+        const chestInput = div.querySelector('.winner-chest');
+        const nameInput = div.querySelector('.winner-name');
+        const teamSelect = div.querySelector('.winner-team');
+
+        if (chestInput) {
+            const autoHandler = function() {
+                const chestVal = this.value.trim();
+                if (!chestVal) return;
+
+                // Auto detect student name if present in uploaded results
+                const foundStudent = autoDetectStudentByChest(chestVal);
+                if (foundStudent && foundStudent.name) {
+                    if (nameInput && (!nameInput.value.trim() || nameInput.dataset.autofilled === 'true')) {
+                        nameInput.value = foundStudent.name;
+                        nameInput.dataset.autofilled = 'true';
+                        nameInput.classList.add('border-success');
+                        setTimeout(() => nameInput.classList.remove('border-success'), 1200);
+                    }
+                    if (teamSelect && !teamSelect.value && foundStudent.team) {
+                        teamSelect.value = foundStudent.team;
+                        teamSelect.classList.add('border-success');
+                        setTimeout(() => teamSelect.classList.remove('border-success'), 1200);
+                    }
+                }
+
+                // Auto detect group from chest code range if team is not set yet
+                const matchedTeam = autoDetectGroupFromChest(chestVal);
+                if (matchedTeam && teamSelect && !teamSelect.value) {
+                    teamSelect.value = matchedTeam;
+                    teamSelect.classList.add('border-success');
+                    setTimeout(() => teamSelect.classList.remove('border-success'), 1200);
+                }
+            };
+            chestInput.addEventListener('input', autoHandler);
+            chestInput.addEventListener('blur', autoHandler);
+        }
 
         const removeBtn = div.querySelector('.remove-winner-btn');
         if (removeBtn) {
@@ -2649,7 +2798,7 @@ const initAdminDashboard = () => {
             const container = document.getElementById('fest1stWinnersContainer');
             if (container) {
                 const count = container.querySelectorAll('.winner-row').length;
-                container.appendChild(createWinnerRow('1st', { points: 10 }, count));
+                container.appendChild(createWinnerRow('1st', { points: activeMarkScheme.first }, count));
             }
         });
     }
@@ -2659,7 +2808,7 @@ const initAdminDashboard = () => {
             const container = document.getElementById('fest2ndWinnersContainer');
             if (container) {
                 const count = container.querySelectorAll('.winner-row').length;
-                container.appendChild(createWinnerRow('2nd', { points: 7 }, count));
+                container.appendChild(createWinnerRow('2nd', { points: activeMarkScheme.second }, count));
             }
         });
     }
@@ -2669,7 +2818,7 @@ const initAdminDashboard = () => {
             const container = document.getElementById('fest3rdWinnersContainer');
             if (container) {
                 const count = container.querySelectorAll('.winner-row').length;
-                container.appendChild(createWinnerRow('3rd', { points: 5 }, count));
+                container.appendChild(createWinnerRow('3rd', { points: activeMarkScheme.third }, count));
             }
         });
     }
@@ -2706,6 +2855,11 @@ const initAdminDashboard = () => {
             const sbFestLogoPreview = document.getElementById('sbFestLogoPreview');
             const sbFestLogoPlaceholder = document.getElementById('sbFestLogoPlaceholder');
 
+            const sbFestTypographyInput = document.getElementById('sbFestTypographyInput');
+            const sbFestTypographyPreview = document.getElementById('sbFestTypographyPreview');
+            const sbFestTypographyPlaceholder = document.getElementById('sbFestTypographyPlaceholder');
+            const removeSbFestTypographyBtn = document.getElementById('removeSbFestTypographyBtn');
+
             if (sbEnableSwitch) sbEnableSwitch.checked = sb.enabled !== false;
             if (sbFestTitleInput) sbFestTitleInput.value = sb.festTitle || 'ATSA Arts Fest 2026';
             if (sbFestStatusSelect) sbFestStatusSelect.value = sb.festStatus || 'Live';
@@ -2719,6 +2873,45 @@ const initAdminDashboard = () => {
                     sbFestLogoPreview.src = '';
                     sbFestLogoPreview.style.display = 'none';
                     if (sbFestLogoPlaceholder) sbFestLogoPlaceholder.style.display = 'block';
+                }
+            }
+
+            if (sbFestTypographyInput) sbFestTypographyInput.value = sb.festTypography || '';
+            if (sbFestTypographyPreview) {
+                if (sb.festTypography) {
+                    sbFestTypographyPreview.src = sb.festTypography;
+                    sbFestTypographyPreview.style.display = 'block';
+                    if (sbFestTypographyPlaceholder) sbFestTypographyPlaceholder.style.display = 'none';
+                    if (removeSbFestTypographyBtn) removeSbFestTypographyBtn.style.display = 'inline-block';
+                } else {
+                    sbFestTypographyPreview.src = '';
+                    sbFestTypographyPreview.style.display = 'none';
+                    if (sbFestTypographyPlaceholder) sbFestTypographyPlaceholder.style.display = 'block';
+                    if (removeSbFestTypographyBtn) removeSbFestTypographyBtn.style.display = 'none';
+                }
+            }
+
+            const adminGrandTotalSwitch = document.getElementById('adminGrandTotalSwitch');
+            if (adminGrandTotalSwitch) {
+                adminGrandTotalSwitch.checked = sb.showGrandTotal !== false;
+            }
+
+            const statusBadge = document.getElementById('adminAnnouncementStatusBadge');
+            if (statusBadge) {
+                const ann = sb.announcement || {};
+                const isAct = ann.active && ann.stage !== 'none';
+                const stageLabels = {
+                    '3rd': 'LIVE: 2nd RUNNER UP (3rd Place)',
+                    '2nd': 'LIVE: 1st RUNNER UP (2nd Place)',
+                    '1st': 'LIVE: GRAND CHAMPIONS (1st Place)',
+                    'all': 'LIVE: GRAND CEREMONY (PODIUM)'
+                };
+                if (isAct) {
+                    statusBadge.className = 'badge bg-warning text-dark px-3 py-2 fw-bold text-uppercase rounded-pill shadow-sm';
+                    statusBadge.innerHTML = `<i class="bi bi-broadcast me-1 text-danger"></i> ${stageLabels[ann.stage] || 'LIVE ANNOUNCEMENT'}`;
+                } else {
+                    statusBadge.className = 'badge bg-secondary text-white px-3 py-2 fw-bold text-uppercase rounded-pill shadow-sm';
+                    statusBadge.innerHTML = `<i class="bi bi-broadcast me-1"></i> Announcement Mode: OFF`;
                 }
             }
 
@@ -2761,14 +2954,50 @@ const initAdminDashboard = () => {
                 }
             }
 
-            // Render Published Event Results Table
-            const resultsTableBody = document.getElementById('sbResultsTableBody');
-            if (resultsTableBody) {
-                if ((sb.results || []).length === 0) {
-                    resultsTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No event results recorded yet.</td></tr>';
+            // Render Published Event Results Table with Search Support
+            window.renderAdminScoreboardResultsTable = function(query = '') {
+                const resultsTableBody = document.getElementById('sbResultsTableBody');
+                if (!resultsTableBody) return;
+
+                let resultsList = sb.results || [];
+                const q = query.toLowerCase().trim();
+
+                const clearBtn = document.getElementById('adminResultClearSearchBtn');
+                if (clearBtn) {
+                    if (q) clearBtn.classList.remove('d-none');
+                    else clearBtn.classList.add('d-none');
+                }
+
+                if (q !== '') {
+                    const matchWinner = (w) => {
+                        if (!w) return false;
+                        const list = Array.isArray(w) ? w : [w];
+                        return list.some(item =>
+                            (item.name && item.name.toLowerCase().includes(q)) ||
+                            (item.studentName && item.studentName.toLowerCase().includes(q)) ||
+                            (item.chestNo && String(item.chestNo).toLowerCase().includes(q)) ||
+                            (item.team && item.team.toLowerCase().includes(q))
+                        );
+                    };
+
+                    resultsList = resultsList.filter(r =>
+                        (r.eventName && r.eventName.toLowerCase().includes(q)) ||
+                        (r.category && r.category.toLowerCase().includes(q)) ||
+                        matchWinner(r.first) ||
+                        matchWinner(r.second) ||
+                        matchWinner(r.third)
+                    );
+                }
+
+                if (resultsList.length === 0) {
+                    if (q) {
+                        resultsTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-search me-1"></i> No event results matching "${query}".</td></tr>`;
+                    } else {
+                        resultsTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No event results recorded yet.</td></tr>';
+                    }
                 } else {
                     let html = '';
-                    sb.results.forEach(r => {
+                    resultsList.forEach(r => {
                         html += `
                             <tr>
                                 <td>
@@ -2793,7 +3022,30 @@ const initAdminDashboard = () => {
                     });
                     resultsTableBody.innerHTML = html;
                 }
+            };
+
+            const searchInput = document.getElementById('adminResultSearchInput');
+            const clearSearchBtn = document.getElementById('adminResultClearSearchBtn');
+
+            if (searchInput && !searchInput.dataset.bound) {
+                searchInput.dataset.bound = "true";
+                searchInput.addEventListener('input', (e) => {
+                    window.renderAdminScoreboardResultsTable(e.target.value);
+                });
             }
+
+            if (clearSearchBtn && !clearSearchBtn.dataset.bound) {
+                clearSearchBtn.dataset.bound = "true";
+                clearSearchBtn.addEventListener('click', () => {
+                    if (searchInput) {
+                        searchInput.value = '';
+                        window.renderAdminScoreboardResultsTable('');
+                    }
+                });
+            }
+
+            const currentSearchQuery = searchInput ? searchInput.value : '';
+            window.renderAdminScoreboardResultsTable(currentSearchQuery);
 
         } catch (err) {
             console.error('Failed to load admin scoreboard data', err);
@@ -2848,17 +3100,63 @@ const initAdminDashboard = () => {
         });
     }
 
+    // Fest Typography File Upload Handler
+    const sbFestTypographyFileInput = document.getElementById('sbFestTypographyFileInput');
+    if (sbFestTypographyFileInput) {
+        sbFestTypographyFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const base64 = evt.target.result;
+                    const sbFestTypographyInput = document.getElementById('sbFestTypographyInput');
+                    const sbFestTypographyPreview = document.getElementById('sbFestTypographyPreview');
+                    const sbFestTypographyPlaceholder = document.getElementById('sbFestTypographyPlaceholder');
+                    const removeSbFestTypographyBtn = document.getElementById('removeSbFestTypographyBtn');
+                    if (sbFestTypographyInput) sbFestTypographyInput.value = base64;
+                    if (sbFestTypographyPreview) {
+                        sbFestTypographyPreview.src = base64;
+                        sbFestTypographyPreview.style.display = 'block';
+                    }
+                    if (sbFestTypographyPlaceholder) sbFestTypographyPlaceholder.style.display = 'none';
+                    if (removeSbFestTypographyBtn) removeSbFestTypographyBtn.style.display = 'inline-block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    const removeSbFestTypographyBtn = document.getElementById('removeSbFestTypographyBtn');
+    if (removeSbFestTypographyBtn) {
+        removeSbFestTypographyBtn.addEventListener('click', function() {
+            const sbFestTypographyInput = document.getElementById('sbFestTypographyInput');
+            const sbFestTypographyPreview = document.getElementById('sbFestTypographyPreview');
+            const sbFestTypographyFileInput = document.getElementById('sbFestTypographyFileInput');
+            const sbFestTypographyPlaceholder = document.getElementById('sbFestTypographyPlaceholder');
+            if (sbFestTypographyInput) sbFestTypographyInput.value = '';
+            if (sbFestTypographyFileInput) sbFestTypographyFileInput.value = '';
+            if (sbFestTypographyPreview) {
+                sbFestTypographyPreview.src = '';
+                sbFestTypographyPreview.style.display = 'none';
+            }
+            if (sbFestTypographyPlaceholder) sbFestTypographyPlaceholder.style.display = 'block';
+            if (removeSbFestTypographyBtn) removeSbFestTypographyBtn.style.display = 'none';
+        });
+    }
+
     // 1. Save Settings Form
     const scoreboardSettingsForm = document.getElementById('scoreboardSettingsForm');
     if (scoreboardSettingsForm) {
         scoreboardSettingsForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const sbFestLogoInput = document.getElementById('sbFestLogoInput');
+            const sbFestTypographyInput = document.getElementById('sbFestTypographyInput');
             const payload = {
                 enabled: document.getElementById('sbEnableSwitch').checked,
                 festTitle: document.getElementById('sbFestTitleInput').value.trim(),
                 festStatus: document.getElementById('sbFestStatusSelect').value,
-                festLogo: sbFestLogoInput ? sbFestLogoInput.value : ''
+                festLogo: sbFestLogoInput ? sbFestLogoInput.value : '',
+                festTypography: sbFestTypographyInput ? sbFestTypographyInput.value : ''
             };
 
             const res = await fetch(getApiUrl('/api/admin/scoreboard/settings'), {
@@ -2962,27 +3260,51 @@ const initAdminDashboard = () => {
     if (festResultForm) {
         festResultForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const id = document.getElementById('festResultId').value || undefined;
+            const eventName = document.getElementById('festResultEventName').value.trim();
+            const category = document.getElementById('festResultCategory').value;
+
+            // Client-side duplicate check (matching programme name + category)
+            const allResults = (currentScoreboardData && currentScoreboardData.results) ? currentScoreboardData.results : [];
+            const isDuplicate = allResults.some(r => 
+                String(r.id) !== String(id || '') &&
+                r.eventName && r.eventName.trim().toLowerCase() === eventName.toLowerCase() &&
+                (r.category || 'General').trim().toLowerCase() === (category || 'General').trim().toLowerCase()
+            );
+
+            if (isDuplicate) {
+                alert(`A result for programme "${eventName}" in category "${category || 'General'}" already exists!\n\nDuplicate uploads for the same programme name and category are not allowed. Please search and edit the existing result instead.`);
+                return;
+            }
+
             const payload = {
-                id: document.getElementById('festResultId').value || undefined,
-                eventName: document.getElementById('festResultEventName').value.trim(),
-                category: document.getElementById('festResultCategory').value,
+                id: id,
+                eventName: eventName,
+                category: category,
                 first: getWinnersFromContainer('fest1stWinnersContainer', 10),
                 second: getWinnersFromContainer('fest2ndWinnersContainer', 7),
                 third: getWinnersFromContainer('fest3rdWinnersContainer', 5)
             };
 
-            const res = await fetch(getApiUrl('/api/admin/scoreboard/result'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            window.showSnackbar(data.message || 'Event result saved');
-            if (data.success) {
+            try {
+                const res = await fetch(getApiUrl('/api/admin/scoreboard/result'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    alert(data.message || 'Failed to save event result');
+                    return;
+                }
+                window.showSnackbar(data.message || 'Event result saved');
                 const modalEl = document.getElementById('festResultModal');
                 const modal = bootstrap.Modal.getInstance(modalEl);
                 if (modal) modal.hide();
                 loadAdminScoreboard();
+            } catch (err) {
+                console.error(err);
+                alert('Error submitting event result.');
             }
         });
     }
@@ -3045,6 +3367,236 @@ const initAdminDashboard = () => {
                 if (data.success) loadAdminScoreboard();
             }
         });
+    }
+
+    // 6. Admin Grand Total Visibility Switch
+    const adminGrandTotalSwitch = document.getElementById('adminGrandTotalSwitch');
+    if (adminGrandTotalSwitch) {
+        adminGrandTotalSwitch.addEventListener('change', async function() {
+            const showGrandTotal = this.checked;
+            try {
+                const res = await fetch(getApiUrl('/api/admin/scoreboard/settings'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ showGrandTotal })
+                });
+                const data = await res.json();
+                window.showSnackbar(data.message || 'Grand total visibility updated');
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    }
+
+    // 6.1 Admin Live Grand Winner Announcement Studio Triggers
+    const annStageBtns = document.querySelectorAll('.btn-announcement-stage');
+    annStageBtns.forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const stage = this.getAttribute('data-stage');
+            const active = stage !== 'none';
+            try {
+                const res = await fetch(getApiUrl('/api/admin/scoreboard/announcement'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ active, stage })
+                });
+                const data = await res.json();
+                window.showSnackbar(data.message || 'Winner announcement updated');
+                if (data.success) loadAdminScoreboard();
+            } catch (err) {
+                console.error(err);
+                alert('Error triggering winner announcement stage.');
+            }
+        });
+    });
+
+    // 7. Admin Export Fest Data Button
+    const adminExportFestDataBtn = document.getElementById('adminExportFestDataBtn');
+    if (adminExportFestDataBtn) {
+        adminExportFestDataBtn.addEventListener('click', async () => {
+            try {
+                const res = await fetch(getApiUrl('/api/scoreboard'));
+                const data = await res.json();
+                if (!data.success || !data.scoreboard) return alert('Failed to fetch scoreboard data for export.');
+
+                const jsonStr = JSON.stringify(data.scoreboard, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `fest_scoreboard_bulk_data_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                console.error(err);
+                alert('Error exporting scoreboard data.');
+            }
+        });
+    }
+
+    // 8. Admin Import Fest Data Form
+    const importForm = document.getElementById('importFestDataForm');
+    if (importForm) {
+        importForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('importFestFileInput');
+            const textInput = document.getElementById('importFestJsonText');
+
+            let importedPayload = null;
+
+            if (fileInput.files && fileInput.files[0]) {
+                const text = await fileInput.files[0].text();
+                try {
+                    importedPayload = JSON.parse(text);
+                } catch (err) {
+                    return alert('Invalid JSON file format.');
+                }
+            } else if (textInput.value.trim()) {
+                try {
+                    importedPayload = JSON.parse(textInput.value.trim());
+                } catch (err) {
+                    return alert('Invalid JSON text format.');
+                }
+            } else {
+                return alert('Please select a file or paste JSON text.');
+            }
+
+            try {
+                const res = await fetch(getApiUrl('/api/admin/scoreboard/import'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(importedPayload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    window.showSnackbar(data.message || 'Bulk data imported successfully!');
+                    const modalEl = document.getElementById('importFestDataModal');
+                    if (modalEl && window.bootstrap) {
+                        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        modal.hide();
+                    }
+                    loadAdminScoreboard();
+                } else {
+                    alert(data.message || 'Import failed.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error connecting to server during import.');
+            }
+        });
+    }
+
+    // 9. Admin Group Code Ranges Modal Handlers
+    const groupCodeRangesModalEl = document.getElementById('groupCodeRangesModal');
+    if (groupCodeRangesModalEl) {
+        groupCodeRangesModalEl.addEventListener('show.bs.modal', async () => {
+            try {
+                const res = await fetch(getApiUrl('/api/scoreboard'));
+                const data = await res.json();
+                if (!data.success || !data.scoreboard) return;
+                const sb = data.scoreboard;
+
+                const teamContainer = document.getElementById('teamCodeRangesContainer');
+                const teams = sb.teams || [];
+
+                if (teamContainer) {
+                    if (teams.length === 0) {
+                        teamContainer.innerHTML = '<div class="col-12 text-muted small">No teams registered yet.</div>';
+                    } else {
+                        let html = '';
+                        teams.forEach((t, index) => {
+                            const defaultRange = t.codeRange || `${(index + 1) * 100}-${(index + 1) * 100 + 99}`;
+                            html += `
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded bg-light">
+                                        <label class="form-label fw-bold text-dark mb-1 d-flex align-items-center justify-content-between">
+                                            <span><span class="badge me-1" style="background-color: ${t.color || '#198754'};">${t.name}</span> Group Code Range</span>
+                                        </label>
+                                        <input type="hidden" class="team-id-input" value="${t.id}">
+                                        <input type="hidden" class="team-name-input" value="${t.name}">
+                                        <input type="text" class="form-control form-control-sm team-coderange-input" placeholder="e.g. 100-200" value="${t.codeRange || defaultRange}">
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        teamContainer.innerHTML = html;
+                    }
+                }
+
+                const catRanges = sb.categoryRanges || {};
+                if (document.getElementById('catRangeSubJunior')) document.getElementById('catRangeSubJunior').value = catRanges['Sub-Junior'] || '100-199';
+                if (document.getElementById('catRangeJunior')) document.getElementById('catRangeJunior').value = catRanges['Junior'] || '200-299';
+                if (document.getElementById('catRangeSenior')) document.getElementById('catRangeSenior').value = catRanges['Senior'] || '300-399';
+                if (document.getElementById('catRangeSuperSenior')) document.getElementById('catRangeSuperSenior').value = catRanges['Super Senior'] || '400-499';
+
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        const autoAssignBtn = document.getElementById('autoAssignCodeRangesBtn');
+        if (autoAssignBtn) {
+            autoAssignBtn.addEventListener('click', () => {
+                const rangeInputs = document.querySelectorAll('.team-coderange-input');
+                rangeInputs.forEach((input, index) => {
+                    const start = (index + 1) * 100;
+                    const end = start + 100;
+                    input.value = `${start}-${end}`;
+                });
+            });
+        }
+
+        const codeRangesForm = document.getElementById('groupCodeRangesForm');
+        if (codeRangesForm) {
+            codeRangesForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const teamInputs = document.querySelectorAll('.team-coderange-input');
+                const teamIdInputs = document.querySelectorAll('.team-id-input');
+                const teamNameInputs = document.querySelectorAll('.team-name-input');
+
+                const teamRanges = [];
+                teamInputs.forEach((input, idx) => {
+                    teamRanges.push({
+                        id: teamIdInputs[idx]?.value,
+                        name: teamNameInputs[idx]?.value,
+                        codeRange: input.value.trim()
+                    });
+                });
+
+                const categoryRanges = {
+                    'Sub-Junior': document.getElementById('catRangeSubJunior')?.value.trim() || '',
+                    'Junior': document.getElementById('catRangeJunior')?.value.trim() || '',
+                    'Senior': document.getElementById('catRangeSenior')?.value.trim() || '',
+                    'Super Senior': document.getElementById('catRangeSuperSenior')?.value.trim() || ''
+                };
+
+                try {
+                    const res = await fetch(getApiUrl('/api/admin/scoreboard/coderanges'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ teamRanges, categoryRanges })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        window.showSnackbar('Group code ranges saved successfully!');
+                        const modalEl = document.getElementById('groupCodeRangesModal');
+                        if (modalEl && window.bootstrap) {
+                            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                            modal.hide();
+                        }
+                        loadAdminScoreboard();
+                    } else {
+                        alert(data.message || 'Failed to save code ranges.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error saving code ranges.');
+                }
+            });
+        }
     }
 };
 

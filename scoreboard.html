@@ -7,6 +7,10 @@
     <title>Fest Scoreboard - Live Stage Display</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/image.png">
 
+    <!-- Google Fonts Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -21,12 +25,15 @@
             width: 100%;
         }
 
+        body, html, * {
+            font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        }
+
         body {
             margin: 0;
             padding: 0;
             background-color: #f8fafc;
             color: #1e293b;
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             min-height: 100vh;
             overflow-x: hidden;
         }
@@ -108,24 +115,26 @@
             <img id="festLogoHeader" src="" alt="Fest Logo" class="bg-white rounded p-1 shadow-sm border"
                 style="max-height: 55px; max-width: 140px; object-fit: contain; display: none;">
             <div>
+                <div id="festTypographyWrapper" style="display: none;" class="mb-1">
+                    <img id="festTypographyHeader" src="" alt="Official Fest Typography Logo" class="img-fluid" style="max-height: 85px; max-width: 400px; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));">
+                </div>
                 <h3 class="fw-bold mb-0 text-dark text-uppercase" id="festTitleHeader">ATSA Arts Fest Scoreboard</h3>
                 <small class="text-muted">Anwariyya Arabic College Live Stage Display</small>
             </div>
         </div>
 
-        <div class="d-flex align-items-center gap-3 mt-3 mt-md-0">
+        <div class="d-flex align-items-center gap-2 flex-wrap mt-3 mt-md-0">
             <div
-                class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill fw-bold text-uppercase small header-badge shadow-sm">
+                class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill fw-bold text-uppercase small header-badge shadow-sm me-1">
                 <span class="live-pulse" id="liveDot"></span>
-                <span id="festStatusBadge"><i class="bi bi-trophy-fill me-1 text-warning"></i> LIVE STAGE
-                    SCOREBOARD</span>
+                <span id="festStatusBadge"><i class="bi bi-trophy-fill me-1 text-warning"></i> LIVE STAGE SCOREBOARD</span>
             </div>
 
             <button type="button" class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold"
                 id="browserFullscreenBtn">
                 <i class="bi bi-arrows-fullscreen me-1"></i> Full Screen
             </button>
-            <a href="index.html" class="btn btn-sm btn-dark rounded-pill px-3">
+            <a href="index.html" class="btn btn-sm btn-dark rounded-pill px-3 fw-bold">
                 <i class="bi bi-house-door me-1"></i> Home
             </a>
         </div>
@@ -133,7 +142,7 @@
 
     <div class="container-fluid px-0">
 
-        <!-- Live Team Standings Grid -->
+        <!-- Live Team Standings Grid (Grand Total) -->
         <div class="row g-3 justify-content-center mb-5" id="scoreboardTeamsContainer">
             <div class="col-12 text-center text-muted py-5">
                 <div class="spinner-border text-success" role="status"></div>
@@ -168,13 +177,17 @@
                 </div>
 
                 <div class="d-flex flex-wrap align-items-center gap-2">
-                    <!-- Search Input -->
-                    <div class="input-group input-group-sm" style="max-width: 260px;">
+                    <!-- Event Results Search Input with Count Badge & Clear Icon -->
+                    <div class="input-group input-group-sm position-relative" style="max-width: 300px;">
                         <span class="input-group-text bg-secondary border-0 text-white"><i
                                 class="bi bi-search"></i></span>
-                        <input type="text" id="festSearchInput" class="form-control bg-secondary text-white border-0"
-                            placeholder="Search event, student, chest...">
+                        <input type="text" id="festSearchInput" class="form-control bg-secondary text-white border-0 pe-4"
+                            placeholder="Search event, student, chest, group...">
+                        <button type="button" id="clearSearchBtn" class="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-white-50 d-none" style="z-index: 5;">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </button>
                     </div>
+                    <span id="festSearchResultsCount" class="badge bg-warning text-dark fw-bold small d-none me-1"></span>
 
                     <!-- Category Filter Buttons -->
                     <div class="btn-group btn-group-sm" role="group" id="festCategoryFilterGroup">
@@ -251,6 +264,322 @@
 
         let allFestResults = [];
         let lastSbDataJSON = '';
+        let lastAnnouncementStage = '';
+
+        function playFirstPrizePopAudio() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const now = ctx.currentTime;
+
+                // Pop synth 1
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(450, now);
+                osc1.frequency.exponentialRampToValueAtTime(1300, now + 0.09);
+                gain1.gain.setValueAtTime(0.35, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.12);
+
+                // Celebratory fanfare chime
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.25, now + 0.08 + idx * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08 + idx * 0.06 + 0.35);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + 0.08 + idx * 0.06);
+                    osc.stop(now + 0.08 + idx * 0.06 + 0.35);
+                });
+            } catch (e) {
+                console.log('Audio pop prevented', e);
+            }
+        }
+
+
+        function triggerChampionsCelebrationPopModal(teamData, festTitle) {
+            playFirstPrizePopAudio();
+
+            const tName = teamData ? (teamData.name || 'Champions') : 'Champions';
+            const tPoints = teamData ? (teamData.points || 0) : 0;
+            const tColor = teamData ? (teamData.color || '#f59e0b') : '#f59e0b';
+            const title = festTitle || 'ATSA Arts Fest 2026';
+
+            let popOverlay = document.getElementById('championsCelebrationPopModalOverlay');
+            if (popOverlay) popOverlay.remove();
+
+            popOverlay = document.createElement('div');
+            popOverlay.id = 'championsCelebrationPopModalOverlay';
+            popOverlay.className = 'champions-pop-overlay d-flex align-items-center justify-content-center position-fixed top-0 start-0 w-100 h-100';
+            popOverlay.style.zIndex = '9999999';
+            popOverlay.style.background = 'rgba(11, 15, 25, 0.92)';
+            popOverlay.style.backdropFilter = 'blur(16px)';
+
+            popOverlay.innerHTML = `
+                <canvas id="championsConfettiCanvas" class="position-absolute top-0 start-0 w-100 h-100" style="pointer-events: none; z-index: 1;"></canvas>
+                
+                <div class="champion-pop-card p-4 p-md-5 text-center shadow-lg position-relative rounded-5" style="max-width: 620px; width: 92%; background: linear-gradient(135deg, #1e1b4b, #0f172a); border: 3.5px solid #f59e0b; box-shadow: 0 0 70px rgba(245, 158, 11, 0.7); z-index: 2; animation: popModalBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-4" onclick="document.getElementById('championsCelebrationPopModalOverlay').remove();"></button>
+
+                    <div class="mb-2">
+                        <span class="badge bg-warning text-dark px-4 py-2 rounded-pill fw-black text-uppercase shadow-lg" style="font-size: 1rem; letter-spacing: 2px;">
+                            👑 OVERALL CHAMPIONS POP 👑
+                        </span>
+                    </div>
+
+                    ${(window.currentScoreboardData && window.currentScoreboardData.festTypography) ? `<div class="my-2"><img src="${window.currentScoreboardData.festTypography}" alt="${title}" class="img-fluid" style="max-height: 90px; max-width: 360px; object-fit: contain; filter: drop-shadow(0 4px 15px rgba(245, 158, 11, 0.7));"></div>` : `<h5 class="text-white-50 fw-extrabold text-uppercase mt-2 mb-1" style="letter-spacing: 1px;">${title}</h5>`}
+
+                    <div class="champions-trophy-burst my-3 text-warning position-relative d-inline-block">
+                        <i class="bi bi-trophy-fill display-1" style="font-size: 5.5rem; filter: drop-shadow(0 0 35px #f59e0b); animation: popTrophyPulse 1.2s infinite alternate;"></i>
+                    </div>
+
+                    <div class="py-2.5 px-4 rounded-pill d-inline-block mb-3 border border-warning" style="background-color: ${tColor}; color: #fff;">
+                        <h2 class="display-3 fw-black text-uppercase mb-0 text-white" style="font-weight: 900; text-shadow: 0 0 20px rgba(0,0,0,0.6);">${tName}</h2>
+                    </div>
+
+                    <div class="my-2 p-3 rounded-4" style="background: rgba(245, 158, 11, 0.18); border: 2px dashed #f59e0b;">
+                        <div class="display-3 fw-black text-warning mb-0" style="font-weight: 900; text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);">${tPoints} <span class="fs-3 text-white">POINTS</span></div>
+                        <p class="text-white-50 mb-0 mt-1 fs-6">🏆 Grand Champions Victory Winner!</p>
+                    </div>
+
+                    <div class="mt-4 d-flex flex-wrap justify-content-center gap-2">
+                        <button type="button" class="btn btn-warning text-dark fw-extrabold rounded-pill px-4 py-2 shadow-sm" onclick="playFirstPrizePopAudio();"><i class="bi bi-volume-up-fill me-1"></i> Victory Chime 🔊</button>
+                        <button type="button" class="btn btn-outline-warning text-warning fw-bold rounded-pill px-4 py-2" onclick="launchConfettiBurst();"><i class="bi bi-stars me-1"></i> Pop Confetti 🎉</button>
+                        <button type="button" class="btn btn-outline-light rounded-pill px-4 py-2" onclick="document.getElementById('championsCelebrationPopModalOverlay').remove();">Close</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(popOverlay);
+            setTimeout(launchConfettiBurst, 100);
+        }
+        window.triggerChampionsCelebrationPopModal = triggerChampionsCelebrationPopModal;
+
+        function launchConfettiBurst() {
+            const canvas = document.getElementById('championsConfettiCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#ffffff', '#eab308'];
+
+            for (let i = 0; i < 180; i++) {
+                particles.push({
+                    x: canvas.width / 2 + (Math.random() - 0.5) * 220,
+                    y: canvas.height / 2 + (Math.random() - 0.5) * 120,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: Math.random() * -15 - 5,
+                    size: Math.random() * 9 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10,
+                    tiltAngle: 0,
+                    tiltAngleIncremental: Math.random() * 0.08 + 0.04,
+                    opacity: 1
+                });
+            }
+
+            let frameCount = 0;
+
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let aliveCount = 0;
+
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.35; // gravity
+                    p.tiltAngle += p.tiltAngleIncremental;
+                    p.tilt = Math.sin(p.tiltAngle) * 12;
+                    p.opacity -= 0.004;
+
+                    if (p.opacity > 0 && p.y < canvas.height + 20) {
+                        aliveCount++;
+                        ctx.save();
+                        ctx.globalAlpha = Math.max(0, p.opacity);
+                        ctx.fillStyle = p.color;
+                        ctx.beginPath();
+                        ctx.fillRect(p.x, p.y, p.size, p.size * 1.5);
+                        ctx.restore();
+                    }
+                });
+
+                if (aliveCount > 0 && frameCount < 280) {
+                    frameCount++;
+                    requestAnimationFrame(render);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            render();
+        }
+        window.launchConfettiBurst = launchConfettiBurst;
+
+        function playWinnerAudioFanfare() {
+            playFirstPrizePopAudio();
+        }
+
+        function handleWinnerAnnouncementOverlay(sb) {
+            const ann = sb && sb.announcement;
+            const isAnnActive = ann && ann.active && ann.stage && ann.stage !== 'none';
+            let overlay = document.getElementById('winnerAnnouncementOverlay');
+
+            if (!isAnnActive) {
+                if (overlay) overlay.remove();
+                lastAnnouncementStage = 'none';
+                return;
+            }
+
+            const currentStage = ann.stage;
+            if (currentStage !== lastAnnouncementStage) {
+                playWinnerAudioFanfare();
+                lastAnnouncementStage = currentStage;
+            }
+
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'winnerAnnouncementOverlay';
+                overlay.className = 'winner-announcement-overlay';
+                document.body.appendChild(overlay);
+            }
+
+            const sortedTeams = [...(sb.teams || [])].sort((a, b) => (b.points || 0) - (a.points || 0));
+            const firstTeam = sortedTeams[0] || { name: 'Champions', points: 0, color: '#f59e0b' };
+            const secondTeam = sortedTeams[1] || { name: '1st Runner Up', points: 0, color: '#cbd5e1' };
+            const thirdTeam = sortedTeams[2] || { name: '2nd Runner Up', points: 0, color: '#cd7f32' };
+
+            let contentHTML = '';
+            const festTitle = sb.festTitle || 'ATSA Arts Fest Scoreboard';
+
+            if (currentStage === '3rd') {
+                contentHTML = `
+                    <div class="text-center mb-4" data-aos="zoom-in">
+                        <span class="badge text-white px-4 py-2 rounded-pill fw-bold text-uppercase mb-2 shadow" style="background: #cd7f32; font-size: 1rem; letter-spacing: 1px;">
+                            🥉 2nd RUNNER UP ANNOUNCEMENT
+                        </span>
+                        <h1 class="display-4 fw-extrabold text-white text-uppercase tracking-tight mt-2">${festTitle}</h1>
+                    </div>
+                    <div class="champion-card-bronze p-4 p-md-5 text-center shadow-lg position-relative" style="max-width: 600px; width: 100%;">
+                        <div class="display-1 text-warning mb-3 trophy-pulse-anim">
+                            <i class="bi bi-award-fill" style="color: #cd7f32;"></i>
+                        </div>
+                        <span class="badge px-3 py-1.5 rounded-pill text-uppercase fw-bold mb-2" style="background-color: ${thirdTeam.color || '#cd7f32'}; font-size: 0.9rem;">
+                            3rd Place Overall
+                        </span>
+                        <h2 class="display-3 fw-black text-white text-uppercase mb-2" style="font-weight: 900;">${thirdTeam.name}</h2>
+                        <div class="display-4 fw-bold text-warning mt-3 mb-1">${thirdTeam.points || 0} <span class="fs-4 text-white-50">Points</span></div>
+                        <p class="text-white-50 mt-2 mb-0">Congratulations to ${thirdTeam.name} for securing 2nd Runner Up!</p>
+                    </div>
+                `;
+            } else if (currentStage === '2nd') {
+                contentHTML = `
+                    <div class="text-center mb-4" data-aos="zoom-in">
+                        <span class="badge text-white px-4 py-2 rounded-pill fw-bold text-uppercase mb-2 shadow" style="background: #94a3b8; font-size: 1rem; letter-spacing: 1px;">
+                            🥈 1st RUNNER UP ANNOUNCEMENT
+                        </span>
+                        <h1 class="display-4 fw-extrabold text-white text-uppercase tracking-tight mt-2">${festTitle}</h1>
+                    </div>
+                    <div class="champion-card-silver p-4 p-md-5 text-center shadow-lg position-relative" style="max-width: 600px; width: 100%;">
+                        <div class="display-1 text-warning mb-3 trophy-pulse-anim">
+                            <i class="bi bi-award-fill" style="color: #e2e8f0;"></i>
+                        </div>
+                        <span class="badge px-3 py-1.5 rounded-pill text-uppercase fw-bold mb-2" style="background-color: ${secondTeam.color || '#94a3b8'}; font-size: 0.9rem;">
+                            2nd Place Overall
+                        </span>
+                        <h2 class="display-3 fw-black text-white text-uppercase mb-2" style="font-weight: 900;">${secondTeam.name}</h2>
+                        <div class="display-4 fw-bold text-white mt-3 mb-1">${secondTeam.points || 0} <span class="fs-4 text-white-50">Points</span></div>
+                        <p class="text-white-50 mt-2 mb-0">Congratulations to ${secondTeam.name} for securing 1st Runner Up!</p>
+                    </div>
+                `;
+            } else if (currentStage === '1st') {
+                contentHTML = `
+                    <div class="text-center mb-4" data-aos="zoom-in">
+                        <span class="badge bg-warning text-dark px-4 py-2 rounded-pill fw-bold text-uppercase mb-2 shadow" style="font-size: 1.05rem; letter-spacing: 1.5px;">
+                            👑 OVERALL CHAMPIONS ANNOUNCEMENT 👑
+                        </span>
+                        <h1 class="display-4 fw-extrabold text-white text-uppercase tracking-tight mt-2">${festTitle}</h1>
+                    </div>
+                    <div class="champion-card-gold p-4 p-md-5 text-center shadow-lg position-relative" style="max-width: 650px; width: 100%;">
+                        <div class="display-1 text-warning mb-3 trophy-pulse-anim">
+                            <i class="bi bi-trophy-fill" style="color: #f59e0b; font-size: 5rem;"></i>
+                        </div>
+                        <span class="badge px-3 py-1.5 rounded-pill text-uppercase fw-bold mb-2 bg-warning text-dark" style="font-size: 1rem;">
+                            🏆 GRAND CHAMPIONS (1ST PLACE)
+                        </span>
+                        <h2 class="display-2 fw-black text-warning text-uppercase mb-2" style="font-weight: 900; text-shadow: 0 0 20px rgba(245, 158, 11, 0.6);">${firstTeam.name}</h2>
+                        <div class="display-3 fw-bold text-white mt-3 mb-1">${firstTeam.points || 0} <span class="fs-4 text-warning">Points</span></div>
+                        <p class="text-white-50 mt-2 mb-0 fs-5">All hail the Grand Champions of ${festTitle}!</p>
+                    </div>
+                `;
+            } else if (currentStage === 'all') {
+                contentHTML = `
+                    <div class="text-center mb-4">
+                        <span class="badge bg-warning text-dark px-4 py-2 rounded-pill fw-bold text-uppercase mb-2 shadow" style="font-size: 1.1rem; letter-spacing: 1.5px;">
+                            🎉 GRAND CHAMPIONSHIP PODIUM CEREMONY 🎉
+                        </span>
+                        <h1 class="display-4 fw-extrabold text-white text-uppercase tracking-tight mt-1">${festTitle}</h1>
+                        <p class="text-white-50">Final Overall Team Championship Standings</p>
+                    </div>
+
+                    <div class="row g-3 justify-content-center align-items-end w-100 px-md-4" style="max-width: 1100px;">
+                        <!-- 2nd Place (Left) -->
+                        <div class="col-12 col-md-4 order-2 order-md-1">
+                            <div class="champion-card-silver p-4 text-center shadow-lg">
+                                <div class="fs-1 text-light mb-2"><i class="bi bi-award-fill"></i></div>
+                                <span class="badge bg-secondary px-3 py-1 rounded-pill text-uppercase fw-bold mb-2">2nd Place</span>
+                                <h3 class="fw-extrabold text-white text-uppercase mb-1" style="font-size: 1.6rem;">${secondTeam.name}</h3>
+                                <div class="fs-2 fw-bold text-white">${secondTeam.points || 0} <small class="fs-6 text-white-50">pts</small></div>
+                                <span class="badge text-white mt-2 px-2.5 py-1" style="background-color: ${secondTeam.color || '#64748b'};">1st Runner Up</span>
+                            </div>
+                        </div>
+
+                        <!-- 1st Place (Center Elevated) -->
+                        <div class="col-12 col-md-4 order-1 order-md-2 mb-3 mb-md-4">
+                            <div class="champion-card-gold p-4 p-md-5 text-center shadow-lg" style="transform: scale(1.06);">
+                                <div class="display-2 text-warning mb-2 trophy-pulse-anim"><i class="bi bi-trophy-fill"></i></div>
+                                <span class="badge bg-warning text-dark px-3 py-1.5 rounded-pill text-uppercase fw-bold mb-2" style="font-size: 0.95rem;">👑 Champions</span>
+                                <h2 class="display-4 fw-black text-warning text-uppercase mb-1" style="font-weight: 900; text-shadow: 0 0 15px rgba(245, 158, 11, 0.5);">${firstTeam.name}</h2>
+                                <div class="display-4 fw-bold text-white">${firstTeam.points || 0} <small class="fs-5 text-warning">pts</small></div>
+                                <span class="badge text-white mt-2 px-3 py-1" style="background-color: ${firstTeam.color || '#10b981'}; font-size: 0.85rem;">Grand Champions</span>
+                            </div>
+                        </div>
+
+                        <!-- 3rd Place (Right) -->
+                        <div class="col-12 col-md-4 order-3 order-md-3">
+                            <div class="champion-card-bronze p-4 text-center shadow-lg">
+                                <div class="fs-1 text-warning mb-2" style="color: #cd7f32 !important;"><i class="bi bi-award-fill"></i></div>
+                                <span class="badge px-3 py-1 rounded-pill text-uppercase fw-bold mb-2" style="background: #cd7f32; color: #fff;">3rd Place</span>
+                                <h3 class="fw-extrabold text-white text-uppercase mb-1" style="font-size: 1.6rem;">${thirdTeam.name}</h3>
+                                <div class="fs-2 fw-bold text-white">${thirdTeam.points || 0} <small class="fs-6 text-white-50">pts</small></div>
+                                <span class="badge text-white mt-2 px-2.5 py-1" style="background-color: ${thirdTeam.color || '#b45309'};">2nd Runner Up</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            overlay.innerHTML = `
+                <div class="announcement-spotlight-left"></div>
+                <div class="announcement-spotlight-right"></div>
+                <button type="button" class="btn btn-outline-light btn-sm rounded-pill position-absolute top-0 end-0 m-4 px-3 fw-bold" onclick="document.getElementById('winnerAnnouncementOverlay').remove();" style="z-index: 10;">
+                    <i class="bi bi-x-lg me-1"></i> Close Display
+                </button>
+                <div class="d-flex flex-column align-items-center justify-content-center min-vh-100 w-100 py-5 px-3 position-relative" style="z-index: 2;">
+                    ${contentHTML}
+                </div>
+            `;
+        }
 
         async function fetchScoreboardData() {
             try {
@@ -260,6 +589,8 @@
                 if (!data.success || !data.scoreboard) return;
                 const sb = data.scoreboard;
 
+                handleWinnerAnnouncementOverlay(sb);
+
                 const currentJSON = JSON.stringify(sb);
                 if (currentJSON === lastSbDataJSON) {
                     // Data has not changed - do not touch the DOM or reset screen state!
@@ -267,10 +598,27 @@
                 }
 
                 const isInitial = !lastSbDataJSON;
-                lastSbDataJSON = currentJSON;
+                window.currentScoreboardData = sb;
+                const titleHeaderEl = document.getElementById('festTitleHeader');
+                const typoWrapper = document.getElementById('festTypographyWrapper');
+                const typoImg = document.getElementById('festTypographyHeader');
 
-                document.getElementById('festTitleHeader').innerText = sb.festTitle || 'ATSA Arts Fest Scoreboard';
+                if (sb.festTypography) {
+                    if (typoImg) typoImg.src = sb.festTypography;
+                    if (typoWrapper) typoWrapper.style.display = 'block';
+                    if (titleHeaderEl) titleHeaderEl.style.display = 'none';
+                } else {
+                    if (typoWrapper) typoWrapper.style.display = 'none';
+                    if (titleHeaderEl) {
+                        titleHeaderEl.style.display = 'block';
+                        titleHeaderEl.innerText = sb.festTitle || 'ATSA Arts Fest Scoreboard';
+                    }
+                }
                 document.getElementById('festStatusBadge').innerHTML = `<i class="bi bi-trophy-fill me-1 text-warning"></i> ${sb.festStatus || 'LIVE SCOREBOARD'}`;
+
+                if (typeof sb.showGrandTotal === 'boolean') {
+                    updateGrandTotalVisibility(!sb.showGrandTotal);
+                }
 
                 const festLogoImg = document.getElementById('festLogoHeader');
                 if (festLogoImg) {
@@ -302,20 +650,30 @@
                         const badgeClass = rankBadges[index] || 'bg-light text-dark';
                         const percent = Math.min(100, Math.round(((team.points || 0) / maxPoints) * 100));
 
+                        const is1stTeam = index === 0;
+                        const clickAttr = is1stTeam ? `onclick="triggerChampionsCelebrationPopModal({name:'${team.name.replace(/'/g, "\\'")}',points:${team.points||0},color:'${team.color||'#f59e0b'}'}, '${(sb.festTitle || 'Arts Fest Scoreboard').replace(/'/g, "\\'")}')" style="cursor: pointer;" title="Click for Overall Champions Victory Pop!"` : '';
+
                         teamsHTML += `
-                            <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="${index * 100}">
-                                <div class="card flat-card h-100 overflow-hidden">
+                            <div class="col-6 col-md-3">
+                                <div class="card flat-card h-100 overflow-hidden shadow-sm ${is1stTeam ? 'pop-badge-glow border-warning' : ''}" ${clickAttr}>
                                     <div class="p-3 text-center border-bottom bg-light">
-                                        <span class="badge ${badgeClass} mb-1 small">${rankLabel} Place</span>
-                                        <h4 class="fw-bold mb-0 text-dark">${team.name}</h4>
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <span class="badge ${badgeClass} mb-1 small fw-bold px-2.5 py-1 text-uppercase" style="font-size: 0.8rem;">
+                                                <i class="bi ${rankIcon} me-1"></i>${rankLabel} Place
+                                            </span>
+                                        </div>
+                                        <h4 class="fw-extrabold mb-0 text-dark text-uppercase mt-1 team-name-heading" style="font-size: 1.4rem; font-weight: 800;">${team.name}</h4>
+                                        ${team.codeRange ? `<div class="mt-1"><span class="badge bg-dark text-warning border border-warning-subtle small fw-bold px-2 py-0.5" style="font-size: 0.75rem;"><i class="bi bi-upc-scan me-1"></i>Code: ${team.codeRange}</span></div>` : ''}
                                     </div>
                                     <div class="card-body text-center p-3">
-                                        <div class="display-5 fw-bold text-dark mb-1" style="font-weight: 800; font-size: 2.5rem;">${team.points || 0}</div>
+                                        <div class="display-5 fw-extrabold text-dark mb-1 team-points-text" style="font-weight: 900; font-size: 2.5rem;">${team.points || 0}</div>
                                         <small class="text-uppercase text-muted fw-semibold small" style="letter-spacing: 0.5px;">Points</small>
                                         
                                         <div class="progress mt-3" style="height: 6px; background-color: #e5e7eb; border-radius: 10px;">
                                             <div class="progress-bar" role="progressbar" style="width: ${percent}%; background-color: ${team.color || '#10b981'}; border-radius: 10px;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
                                         </div>
+
+                                        ${is1stTeam ? `<div class="mt-2"><span class="badge bg-warning text-dark border border-dark fw-bold px-2.5 py-1 shadow-sm"><i class="bi bi-balloon-fill me-1"></i>CHAMPIONS POP 🎉</span></div>` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -445,11 +803,13 @@
         function matchWinner(w, q) {
             if (!w) return false;
             const list = Array.isArray(w) ? w : [w];
-            return list.some(item =>
-                (item.name && item.name.toLowerCase().includes(q)) ||
-                (item.chestNo && item.chestNo.toLowerCase().includes(q)) ||
-                (item.team && item.team.toLowerCase().includes(q))
-            );
+            return list.some(item => {
+                const name = String(item.name || item.studentName || item.student || item.student_name || '').toLowerCase();
+                const chest = String(item.chestNo || item.chest || item.chestNumber || item.chest_no || '').toLowerCase();
+                const team = String(item.team || item.group || item.groupName || item.teamName || item.group_name || '').toLowerCase();
+                const grade = String(item.grade || item.rankGrade || '').toLowerCase();
+                return name.includes(q) || chest.includes(q) || team.includes(q) || grade.includes(q);
+            });
         }
 
         function renderSingleWinnerCardRow(rankPlace, w) {
@@ -457,80 +817,143 @@
             let rowClass = 'flat-rank-row-3rd';
             let rankText = '3rd';
             let ptsBadgeClass = 'pts-badge-3rd';
+            let rankIcon = 'bi-award-fill';
 
             if (rankPlace === '1st') {
                 badgeClass = 'flat-badge-1st';
                 rowClass = 'flat-rank-row-1st';
                 rankText = '1st';
                 ptsBadgeClass = 'pts-badge-1st';
+                rankIcon = 'bi-trophy-fill';
             } else if (rankPlace === '2nd') {
                 badgeClass = 'flat-badge-2nd';
                 rowClass = 'flat-rank-row-2nd';
                 rankText = '2nd';
                 ptsBadgeClass = 'pts-badge-2nd';
+                rankIcon = 'bi-award-fill';
             }
 
-            if (!w || !w.name) {
+            const name = w ? (w.name || w.studentName || w.student || w.student_name || '') : '';
+            const groupName = w ? (w.team || w.group || w.groupName || w.teamName || w.group_name || '') : '';
+            const chestNo = w ? (w.chestNo || w.chest || w.chestNumber || w.chest_no || '') : '';
+            const grade = w ? (w.grade || w.rankGrade || '') : '';
+            const points = w && w.points !== undefined ? w.points : (w && w.pts !== undefined ? w.pts : 0);
+
+            if (!name) {
                 return `
-                    <div class="flat-rank-row ${rowClass} d-flex align-items-center justify-content-between opacity-50 py-2">
-                        <span class="badge ${badgeClass}">${rankText}</span>
-                        <span class="text-muted small">-</span>
+                    <div class="flat-rank-row ${rowClass} d-flex align-items-center justify-content-between opacity-50 py-2 px-2.5 rounded-2 my-1" style="white-space: nowrap;">
+                        <span class="badge ${badgeClass} d-inline-flex align-items-center gap-1"><i class="bi ${rankIcon}"></i> ${rankText}</span>
+                        <span class="text-muted small fw-semibold">-</span>
                     </div>
                 `;
             }
 
             return `
-                <div class="flat-rank-row ${rowClass} d-flex align-items-center justify-content-between py-2 px-2.5">
-                    <div class="d-flex align-items-center gap-2 overflow-hidden me-2">
-                        <span class="badge ${badgeClass}">${rankText}</span>
-                        <div class="text-truncate">
-                            <div class="fw-bold text-dark text-truncate" style="font-size: 0.95rem; font-weight: 700;">${w.name}</div>
-                            <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
-                                ${w.chestNo ? `<span class="flat-tag-chest">#${w.chestNo}</span>` : ''}
-                                ${w.team ? `<span class="flat-tag-team">${w.team}</span>` : ''}
-                                ${w.grade ? `<span class="flat-tag-grade">Grade ${w.grade}</span>` : ''}
+                <div class="flat-rank-row ${rowClass} d-flex align-items-center justify-content-between py-2 px-2.5 rounded-2 my-1" style="white-space: nowrap;">
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                        <span class="badge ${badgeClass} d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 0.8rem;"><i class="bi ${rankIcon}"></i> ${rankText}</span>
+                        <div class="winner-info-block min-w-0 flex-grow-1" style="white-space: nowrap;">
+                            <div class="winner-student-name fw-bold text-dark text-truncate" style="font-size: 0.9rem; white-space: nowrap;">${name}</div>
+                            <div class="d-flex align-items-center gap-1 mt-0.5" style="white-space: nowrap;">
+                                ${groupName ? `<span class="flat-tag-team" style="font-size: 0.7rem; padding: 1px 6px;"><i class="bi bi-people-fill me-1"></i>${groupName}</span>` : ''}
+                                ${chestNo ? `<span class="flat-tag-chest" style="font-size: 0.7rem; padding: 1px 6px;">#${chestNo}</span>` : ''}
+                                ${grade ? `<span class="flat-tag-grade" style="font-size: 0.7rem; padding: 1px 6px;">Grade ${grade}</span>` : ''}
                             </div>
                         </div>
                     </div>
-                    <span class="badge ${ptsBadgeClass} fw-extrabold px-2.5 py-1.5" style="font-size: 0.85rem; font-weight: 800;">+${w.points || 0} pts</span>
                 </div>
             `;
         }
 
         function renderRankCardBlock(rankPlace, winnersData) {
-            const list = Array.isArray(winnersData) ? winnersData : (winnersData && winnersData.name ? [winnersData] : []);
-            if (list.length === 0) return renderSingleWinnerCardRow(rankPlace, {});
+            const list = Array.isArray(winnersData) ? winnersData : (winnersData && (winnersData.name || winnersData.studentName) ? [winnersData] : []);
+            if (list.length === 0) return renderSingleWinnerCardRow(rankPlace, null);
             return list.map(w => renderSingleWinnerCardRow(rankPlace, w)).join('');
         }
 
+        function getCardWinnerCount(res) {
+            if (!res) return 0;
+            const count = (w) => {
+                if (!w) return 0;
+                if (Array.isArray(w)) return w.filter(item => item && (item.name || item.studentName || item.student || item.student_name)).length;
+                return (w.name || w.studentName || w.student || w.student_name) ? 1 : 0;
+            };
+            return count(res.first) + count(res.second) + count(res.third);
+        }
+
+        function chunkCardsIntoSets(orderedCards) {
+            if (!orderedCards || orderedCards.length === 0) return [];
+            const sets = [];
+            let i = 0;
+            while (i < orderedCards.length) {
+                const remaining = orderedCards.slice(i);
+                let currentSlotCount = 0;
+                const setCards = [];
+
+                for (let j = 0; j < remaining.length; j++) {
+                    const card = remaining[j];
+                    const isWide = getCardWinnerCount(card) > 3;
+                    const cardSlots = isWide ? 2 : 1;
+
+                    if (currentSlotCount + cardSlots > 4 && setCards.length > 0) {
+                        break;
+                    }
+
+                    setCards.push({
+                        res: card,
+                        isWide: isWide,
+                        slots: cardSlots
+                    });
+                    currentSlotCount += cardSlots;
+                }
+
+                sets.push({
+                    setCards: setCards,
+                    totalSlots: currentSlotCount
+                });
+
+                i += setCards.length;
+            }
+            return sets;
+        }
+
         function renderRankTableCell(rankPlace, winnersData) {
-            const list = Array.isArray(winnersData) ? winnersData : (winnersData && winnersData.name ? [winnersData] : []);
-            if (list.length === 0 || !list[0].name) return '<span class="text-muted small">-</span>';
+            const list = Array.isArray(winnersData) ? winnersData : (winnersData && (winnersData.name || winnersData.studentName) ? [winnersData] : []);
+            if (list.length === 0) return '<span class="text-muted small">-</span>';
 
             const iconClass = rankPlace === '1st' ? 'bi-trophy-fill text-warning' : (rankPlace === '2nd' ? 'bi-award-fill text-secondary' : 'bi-award text-danger');
             const rankBadgeBg = rankPlace === '1st' ? 'bg-warning text-dark' : (rankPlace === '2nd' ? 'bg-secondary text-white' : 'bg-danger text-white');
-            const teamBadgeBg = rankPlace === '1st' ? 'bg-success-subtle text-success' : (rankPlace === '2nd' ? 'bg-danger-subtle text-danger' : 'bg-primary-subtle text-primary');
             const ptsTextClass = rankPlace === '1st' ? 'text-warning' : (rankPlace === '2nd' ? 'text-secondary' : 'text-danger');
 
-            return list.map(w => `
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <i class="bi ${iconClass} fs-5"></i>
-                    <div>
-                        <div class="d-flex align-items-center gap-1 mb-1">
-                            <span class="badge ${rankBadgeBg} fw-bold" style="font-size: 0.65rem;"><i class="bi ${iconClass.split(' ')[0]} me-1"></i>${rankPlace}</span>
-                            <span class="fw-semibold text-dark small">${w.name}</span>
+            return list.map(w => {
+                const name = w.name || w.studentName || w.student || w.student_name || '-';
+                const groupName = w.team || w.group || w.groupName || w.teamName || w.group_name || '';
+                const chestNo = w.chestNo || w.chest || w.chestNumber || w.chest_no || '';
+                const grade = w.grade || w.rankGrade || '';
+                const points = w.points !== undefined ? w.points : (w.pts !== undefined ? w.pts : 0);
+
+                return `
+                    <div class="winner-table-cell-item d-flex align-items-center gap-2 mb-1.5 p-2 rounded bg-light border">
+                        <div class="d-flex flex-column align-items-center justify-content-center px-1 flex-shrink-0">
+                            <i class="bi ${iconClass} fs-5"></i>
+                            <span class="badge ${rankBadgeBg} fw-bold mt-0.5" style="font-size: 0.7rem;">${rankPlace}</span>
                         </div>
-                        ${w.chestNo ? `<small class="badge bg-dark text-white me-1">Chest #${w.chestNo}</small>` : ''}
-                        <small class="badge ${teamBadgeBg} me-1">${w.team || '-'}</small>
-                        ${w.grade ? `<small class="badge bg-secondary-subtle text-secondary me-1">${w.grade}</small>` : ''}
-                        <small class="fw-bold ${ptsTextClass}">+${w.points || 0} pts</small>
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="winner-student-name font-weight-bold text-dark">${name}</div>
+                            <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                                ${groupName ? `<span class="badge bg-primary text-white fw-bold text-uppercase" style="font-size: 0.75rem;"><i class="bi bi-people-fill me-1"></i>${groupName}</span>` : ''}
+                                ${chestNo ? `<span class="badge bg-dark text-white fw-bold" style="font-size: 0.75rem;">#${chestNo}</span>` : ''}
+                                ${grade ? `<span class="badge bg-success text-white fw-bold" style="font-size: 0.75rem;">Grade ${grade}</span>` : ''}
+                                <span class="fw-extrabold ms-auto ${ptsTextClass}" style="font-size: 0.85rem; font-weight: 800;">+${points} pts</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         let festSetIndex = 0;
-        let festCountdownSeconds = 15;
+        let festCountdownSeconds = 10;
         let festCardTimerInterval = null;
 
         function startCardTimer(totalPages) {
@@ -544,10 +967,10 @@
                 const barEl = document.getElementById('festCountdownBar');
 
                 if (textEl) textEl.innerText = `${festCountdownSeconds}s`;
-                if (barEl) barEl.style.width = `${(festCountdownSeconds / 15) * 100}%`;
+                if (barEl) barEl.style.width = `${(festCountdownSeconds / 10) * 100}%`;
 
                 if (festCountdownSeconds <= 0) {
-                    festCountdownSeconds = 15;
+                    festCountdownSeconds = 10;
                     festSetIndex = (festSetIndex + 1) % totalPages;
                     renderResultsView(false);
                 }
@@ -558,6 +981,8 @@
             const cardsContainer = document.getElementById('festResultsCardsContainer');
             const tableBody = document.getElementById('festResultsTableBody');
             const searchInput = document.getElementById('festSearchInput');
+            const clearSearchBtn = document.getElementById('clearSearchBtn');
+            const searchCountBadge = document.getElementById('festSearchResultsCount');
             const activeBtn = document.querySelector('#festCategoryFilterGroup .btn.active');
 
             const filterCategory = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
@@ -572,18 +997,26 @@
             if (searchQuery !== '') {
                 filtered = filtered.filter(r =>
                     (r.eventName && r.eventName.toLowerCase().includes(searchQuery)) ||
+                    (r.category && r.category.toLowerCase().includes(searchQuery)) ||
                     matchWinner(r.first, searchQuery) ||
                     matchWinner(r.second, searchQuery) ||
                     matchWinner(r.third, searchQuery)
                 );
+
+                if (searchCountBadge) {
+                    searchCountBadge.classList.remove('d-none');
+                    searchCountBadge.innerText = `${filtered.length} found`;
+                }
+            } else {
+                if (searchCountBadge) searchCountBadge.classList.add('d-none');
             }
 
             if (resetPage) {
                 festSetIndex = 0;
-                festCountdownSeconds = 15;
+                festCountdownSeconds = 10;
             }
 
-            // Balance mixed cards if 'all' category is selected
+            // Group / Balance Cards by Category when 'All' is selected
             let orderedCards = [];
             if (filterCategory === 'all') {
                 const buckets = {
@@ -606,18 +1039,19 @@
                 orderedCards = filtered;
             }
 
-            const cardsPerPage = 4;
-            const totalPages = Math.ceil(orderedCards.length / cardsPerPage) || 1;
+            const sets = chunkCardsIntoSets(orderedCards);
+            const totalPages = sets.length || 1;
 
             if (festSetIndex >= totalPages) festSetIndex = 0;
 
-            // 1. Render 4-Card Set View
+            // 1. Render Results in Rectangle Card Set View with Wide Extra-Result Cards (10s timer per set)
             if (cardsContainer) {
-                if (orderedCards.length === 0) {
+                if (sets.length === 0) {
                     cardsContainer.innerHTML = '<div class="w-100 text-center py-5 text-muted"><i class="bi bi-inbox display-4 d-block mb-3 opacity-50"></i><h5>No event programme results found.</h5><p class="small">Try adjusting search or category filter.</p></div>';
                     if (festCardTimerInterval) clearInterval(festCardTimerInterval);
                 } else {
-                    const currentSetCards = orderedCards.slice(festSetIndex * cardsPerPage, (festSetIndex + 1) * cardsPerPage);
+                    const currentSetObj = sets[festSetIndex] || sets[0];
+                    const currentSetCards = currentSetObj.setCards;
 
                     let cardsHTML = `
                         <div class="mb-3 px-1">
@@ -626,71 +1060,120 @@
                                     <span class="badge bg-dark text-white rounded-pill px-3 py-1.5 fw-bold small">
                                         Set ${festSetIndex + 1} of ${totalPages}
                                     </span>
-                                    ${totalPages > 1 ? `<small class="text-white-50 fw-semibold">Auto-switching in <strong id="festCountdownText" class="text-warning">${festCountdownSeconds}s</strong></small>` : ''}
+                                    ${totalPages > 1 ? `<small class="text-muted fw-semibold">Auto-switching in <strong id="festCountdownText">${festCountdownSeconds}s</strong></small>` : ''}
                                 </div>
                                 ${totalPages > 1 ? `
                                     <div class="d-flex align-items-center gap-1">
-                                        <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-semibold" id="prevSetBtn" title="Previous Set">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" id="prevSetBtn" title="Previous Set">
                                             <i class="bi bi-chevron-left me-1"></i> Prev Set
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-semibold" id="nextSetBtn" title="Next Set">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" id="nextSetBtn" title="Next Set">
                                             Next Set <i class="bi bi-chevron-right ms-1"></i>
                                         </button>
                                     </div>
                                 ` : ''}
                             </div>
                             ${totalPages > 1 ? `
-                                <div class="progress" style="height: 4px; background-color: rgba(255,255,255,0.15); border-radius: 4px;">
-                                    <div id="festCountdownBar" class="progress-bar bg-warning" style="width: ${(festCountdownSeconds / 15) * 100}%; transition: width 1s linear;"></div>
+                                <div class="progress" style="height: 4px; background-color: #e2e8f0; border-radius: 4px;">
+                                    <div id="festCountdownBar" class="progress-bar bg-warning" style="width: ${(festCountdownSeconds / 10) * 100}%; transition: width 1s linear;"></div>
                                 </div>
                             ` : ''}
                         </div>
-
-                        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3 mb-2">
+                        <div class="row g-3 mb-2">
                     `;
 
-                    currentSetCards.forEach((res, index) => {
+                    currentSetCards.forEach((item, index) => {
+                        const res = item.res;
                         const delay = (index * 0.08).toFixed(2);
-                        cardsHTML += `
-                            <div class="col fest-card-anim" style="animation-delay: ${delay}s;">
-                                <div class="card flat-card h-100 p-3 shadow-sm">
-                                    <div class="text-center mb-2 pb-2 border-bottom">
-                                        <h5 class="fw-extrabold mb-1 text-dark text-center" style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.2px;">
-                                            ${res.eventName}
-                                        </h5>
-                                        <span class="flat-tag" style="font-size: 0.8rem; font-weight: 700; padding: 3px 10px;">${res.category || 'General'}</span>
-                                    </div>
-                                    <div class="d-flex flex-column gap-1">
-                                        ${renderRankCardBlock('1st', res.first)}
-                                        ${renderRankCardBlock('2nd', res.second)}
-                                        ${renderRankCardBlock('3rd', res.third)}
+                        if (item.isWide) {
+                            cardsHTML += `
+                                <div class="col-12 col-lg-6 fest-card-anim" style="animation-delay: ${delay}s;">
+                                    <div class="card flat-card h-100 p-3 shadow-sm border d-flex flex-column justify-content-between rounded-3">
+                                        <div>
+                                            <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                                                <h5 class="fw-extrabold mb-0 text-dark text-truncate me-2" style="font-size: 1.15rem; font-weight: 800; letter-spacing: -0.2px;" title="${res.eventName}">
+                                                    ${res.eventName}
+                                                </h5>
+                                                <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                                                    <span class="flat-tag" style="font-size: 0.78rem; font-weight: 700; padding: 3px 10px;">${res.category || 'General'}</span>
+                                                    <span class="badge bg-warning text-dark fw-bold px-2 py-1" style="font-size: 0.72rem;"><i class="bi bi-star-fill me-1"></i>Multi-Winner</span>
+                                                </div>
+                                            </div>
+                                            <div class="row row-cols-1 row-cols-sm-2 g-2 winner-cards-data-wrapper">
+                                                <div class="col">
+                                                    ${renderRankCardBlock('1st', res.first)}
+                                                </div>
+                                                <div class="col">
+                                                    ${renderRankCardBlock('2nd', res.second)}
+                                                    ${renderRankCardBlock('3rd', res.third)}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                        } else {
+                            cardsHTML += `
+                                <div class="col-12 col-sm-6 col-lg-3 fest-card-anim" style="animation-delay: ${delay}s;">
+                                    <div class="card flat-card h-100 p-3 shadow-sm border d-flex flex-column justify-content-between rounded-3">
+                                        <div>
+                                            <div class="text-center mb-2 pb-2 border-bottom">
+                                                <h5 class="fw-extrabold mb-1 text-dark text-center text-truncate" style="font-size: 1.1rem; font-weight: 800; letter-spacing: -0.2px;" title="${res.eventName}">
+                                                    ${res.eventName}
+                                                </h5>
+                                                <span class="flat-tag" style="font-size: 0.78rem; font-weight: 700; padding: 3px 10px;">${res.category || 'General'}</span>
+                                            </div>
+                                            <div class="winner-cards-data-wrapper">
+                                                ${renderRankCardBlock('1st', res.first)}
+                                                ${renderRankCardBlock('2nd', res.second)}
+                                                ${renderRankCardBlock('3rd', res.third)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
                     });
                     cardsHTML += `</div>`;
-
                     cardsContainer.innerHTML = cardsHTML;
 
+                    // Manual Set navigation handlers
                     const prevBtn = document.getElementById('prevSetBtn');
                     const nextBtn = document.getElementById('nextSetBtn');
 
                     if (prevBtn) {
                         prevBtn.onclick = () => {
                             festSetIndex = (festSetIndex - 1 + totalPages) % totalPages;
-                            festCountdownSeconds = 15;
+                            festCountdownSeconds = 10;
                             renderResultsView(false);
-                            startCardTimer(totalPages);
                         };
                     }
 
                     if (nextBtn) {
                         nextBtn.onclick = () => {
                             festSetIndex = (festSetIndex + 1) % totalPages;
-                            festCountdownSeconds = 15;
+                            festCountdownSeconds = 10;
                             renderResultsView(false);
-                            startCardTimer(totalPages);
+                        };
+                    }
+
+                    // Navigation arrow buttons in header card toolbar
+                    const scrollLeftBtn = document.getElementById('festScrollLeftBtn');
+                    const scrollRightBtn = document.getElementById('festScrollRightBtn');
+                    if (scrollLeftBtn) {
+                        scrollLeftBtn.onclick = (e) => {
+                            e.preventDefault();
+                            festSetIndex = (festSetIndex - 1 + totalPages) % totalPages;
+                            festCountdownSeconds = 10;
+                            renderResultsView(false);
+                        };
+                    }
+                    if (scrollRightBtn) {
+                        scrollRightBtn.onclick = (e) => {
+                            e.preventDefault();
+                            festSetIndex = (festSetIndex + 1) % totalPages;
+                            festCountdownSeconds = 10;
+                            renderResultsView(false);
                         };
                     }
 
@@ -729,7 +1212,29 @@
         }
 
         // Search & Category Event Handlers
-        document.getElementById('festSearchInput').addEventListener('input', renderResultsView);
+        const festSearchInput = document.getElementById('festSearchInput');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+        if (festSearchInput) {
+            festSearchInput.addEventListener('input', () => {
+                if (clearSearchBtn) {
+                    if (festSearchInput.value.trim()) {
+                        clearSearchBtn.classList.remove('d-none');
+                    } else {
+                        clearSearchBtn.classList.add('d-none');
+                    }
+                }
+                renderResultsView();
+            });
+        }
+
+        if (clearSearchBtn && festSearchInput) {
+            clearSearchBtn.addEventListener('click', () => {
+                festSearchInput.value = '';
+                clearSearchBtn.classList.add('d-none');
+                renderResultsView();
+            });
+        }
 
         const filterBtns = document.querySelectorAll('#festCategoryFilterGroup .btn');
         filterBtns.forEach(btn => {
@@ -739,6 +1244,206 @@
                 renderResultsView();
             });
         });
+
+        // Toggle Grand Total (Live Team Standings) visibility
+        function updateGrandTotalVisibility(hide) {
+            const grandTotalContainer = document.getElementById('scoreboardTeamsContainer');
+            if (!grandTotalContainer) return;
+            grandTotalContainer.style.display = hide ? 'none' : 'flex';
+        }
+
+        // Export Bulk Scoreboard Data
+        const exportFestDataBtn = document.getElementById('exportFestDataBtn');
+        if (exportFestDataBtn) {
+            exportFestDataBtn.addEventListener('click', async () => {
+                try {
+                    const res = await fetch(getApiUrl('/api/scoreboard'));
+                    const data = await res.json();
+                    if (!data.success || !data.scoreboard) return alert('Failed to fetch scoreboard data for export.');
+
+                    const jsonStr = JSON.stringify(data.scoreboard, null, 2);
+                    const blob = new Blob([jsonStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `fest_scoreboard_bulk_data_${Date.now()}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } catch (err) {
+                    console.error(err);
+                    alert('Error exporting scoreboard data.');
+                }
+            });
+        }
+
+        // Import Bulk Scoreboard Data
+        const importForm = document.getElementById('importFestDataForm');
+        if (importForm) {
+            importForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fileInput = document.getElementById('importFestFileInput');
+                const textInput = document.getElementById('importFestJsonText');
+
+                let importedPayload = null;
+
+                if (fileInput.files && fileInput.files[0]) {
+                    const text = await fileInput.files[0].text();
+                    try {
+                        importedPayload = JSON.parse(text);
+                    } catch (err) {
+                        return alert('Invalid JSON file format.');
+                    }
+                } else if (textInput.value.trim()) {
+                    try {
+                        importedPayload = JSON.parse(textInput.value.trim());
+                    } catch (err) {
+                        return alert('Invalid JSON text format.');
+                    }
+                } else {
+                    return alert('Please select a file or paste JSON text.');
+                }
+
+                try {
+                    const res = await fetch(getApiUrl('/api/admin/scoreboard/import'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(importedPayload)
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(data.message || 'Bulk data imported successfully!');
+                        const modalEl = document.getElementById('importFestDataModal');
+                        if (modalEl && window.bootstrap) {
+                            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                            modal.hide();
+                        }
+                        lastSbDataJSON = '';
+                        fetchScoreboardData();
+                    } else {
+                        alert(data.message || 'Import failed.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error connecting to server during import.');
+                }
+            });
+        }
+
+        // Manage Group Code Ranges Modal Handlers
+        const groupCodeRangesModalEl = document.getElementById('groupCodeRangesModal');
+        if (groupCodeRangesModalEl) {
+            groupCodeRangesModalEl.addEventListener('show.bs.modal', async () => {
+                try {
+                    const res = await fetch(getApiUrl('/api/scoreboard'));
+                    const data = await res.json();
+                    if (!data.success || !data.scoreboard) return;
+                    const sb = data.scoreboard;
+
+                    const teamContainer = document.getElementById('teamCodeRangesContainer');
+                    const teams = sb.teams || [];
+
+                    if (teamContainer) {
+                        if (teams.length === 0) {
+                            teamContainer.innerHTML = '<div class="col-12 text-muted small">No teams registered yet.</div>';
+                        } else {
+                            let html = '';
+                            teams.forEach((t, index) => {
+                                const defaultRange = t.codeRange || `${(index + 1) * 100}-${(index + 1) * 100 + 99}`;
+                                html += `
+                                    <div class="col-md-6">
+                                        <div class="p-3 border rounded bg-light">
+                                            <label class="form-label fw-bold text-dark mb-1 d-flex align-items-center justify-content-between">
+                                                <span><span class="badge me-1" style="background-color: ${t.color || '#198754'};">${t.name}</span> Group Code</span>
+                                            </label>
+                                            <input type="hidden" class="team-id-input" value="${t.id}">
+                                            <input type="hidden" class="team-name-input" value="${t.name}">
+                                            <input type="text" class="form-control form-control-sm team-coderange-input" placeholder="e.g. 100-200" value="${t.codeRange || defaultRange}">
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            teamContainer.innerHTML = html;
+                        }
+                    }
+
+                    const catRanges = sb.categoryRanges || {};
+                    if (document.getElementById('catRangeSubJunior')) document.getElementById('catRangeSubJunior').value = catRanges['Sub-Junior'] || '100-199';
+                    if (document.getElementById('catRangeJunior')) document.getElementById('catRangeJunior').value = catRanges['Junior'] || '200-299';
+                    if (document.getElementById('catRangeSenior')) document.getElementById('catRangeSenior').value = catRanges['Senior'] || '300-399';
+                    if (document.getElementById('catRangeSuperSenior')) document.getElementById('catRangeSuperSenior').value = catRanges['Super Senior'] || '400-499';
+
+                } catch (err) {
+                    console.error(err);
+                }
+            });
+
+            // Auto-assign code ranges button
+            const autoAssignBtn = document.getElementById('autoAssignCodeRangesBtn');
+            if (autoAssignBtn) {
+                autoAssignBtn.addEventListener('click', () => {
+                    const rangeInputs = document.querySelectorAll('.team-coderange-input');
+                    rangeInputs.forEach((input, index) => {
+                        const start = (index + 1) * 100;
+                        const end = start + 100;
+                        input.value = `${start}-${end}`;
+                    });
+                });
+            }
+
+            // Save form handler
+            const form = document.getElementById('groupCodeRangesForm');
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const teamInputs = document.querySelectorAll('.team-coderange-input');
+                    const teamIdInputs = document.querySelectorAll('.team-id-input');
+                    const teamNameInputs = document.querySelectorAll('.team-name-input');
+
+                    const teamRanges = [];
+                    teamInputs.forEach((input, idx) => {
+                        teamRanges.push({
+                            id: teamIdInputs[idx]?.value,
+                            name: teamNameInputs[idx]?.value,
+                            codeRange: input.value.trim()
+                        });
+                    });
+
+                    const categoryRanges = {
+                        'Sub-Junior': document.getElementById('catRangeSubJunior')?.value.trim() || '',
+                        'Junior': document.getElementById('catRangeJunior')?.value.trim() || '',
+                        'Senior': document.getElementById('catRangeSenior')?.value.trim() || '',
+                        'Super Senior': document.getElementById('catRangeSuperSenior')?.value.trim() || ''
+                    };
+
+                    try {
+                        const res = await fetch(getApiUrl('/api/admin/scoreboard/coderanges'), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ teamRanges, categoryRanges })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            alert('Group code ranges saved successfully!');
+                            const modalEl = document.getElementById('groupCodeRangesModal');
+                            if (modalEl && window.bootstrap) {
+                                const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                                modal.hide();
+                            }
+                            lastSbDataJSON = '';
+                            fetchScoreboardData();
+                        } else {
+                            alert(data.message || 'Failed to save code ranges.');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Error saving code ranges.');
+                    }
+                });
+            }
+        }
 
         // View Switcher Handlers
         const viewCardsBtn = document.getElementById('viewCardsBtn');
