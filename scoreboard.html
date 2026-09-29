@@ -600,6 +600,7 @@
                 }
 
                 const isInitial = !lastSbDataJSON;
+                lastSbDataJSON = currentJSON;
                 window.currentScoreboardData = sb;
                 const titleHeaderEl = document.getElementById('festTitleHeader');
                 const typoWrapper = document.getElementById('festTypographyWrapper');

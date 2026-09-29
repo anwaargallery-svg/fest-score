@@ -879,4 +879,20 @@ table {
 
 .mark-scheme-btn.active small {
   color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Smooth Fest Card Entrance Animation */
+.fest-card-anim {
+  animation: festCardFadeInUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes festCardFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }

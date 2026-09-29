@@ -2823,6 +2823,93 @@ const initAdminDashboard = () => {
         });
     }
 
+    // --- Keyboard Shortcut Handlers for Winner Modal ---
+    function addNewWinnerRowAndFocus(place) {
+        const btnId = place === '1st' ? 'add1stWinnerBtn' : (place === '2nd' ? 'add2ndWinnerBtn' : 'add3rdWinnerBtn');
+        const containerId = place === '1st' ? 'fest1stWinnersContainer' : (place === '2nd' ? 'fest2ndWinnersContainer' : 'fest3rdWinnersContainer');
+        const btn = document.getElementById(btnId);
+        const container = document.getElementById(containerId);
+        
+        if (btn && container) {
+            btn.click();
+            setTimeout(() => {
+                const rows = container.querySelectorAll('.winner-row');
+                const lastRow = rows[rows.length - 1];
+                if (lastRow) {
+                    const chestInput = lastRow.querySelector('.winner-chest');
+                    if (chestInput) {
+                        chestInput.focus();
+                        chestInput.select();
+                    }
+                }
+            }, 30);
+        }
+    }
+
+    function switchWinnerRankFocus(place) {
+        const containerId = place === '1st' ? 'fest1stWinnersContainer' : (place === '2nd' ? 'fest2ndWinnersContainer' : 'fest3rdWinnersContainer');
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const rows = container.querySelectorAll('.winner-row');
+        if (rows.length > 0) {
+            const lastRow = rows[rows.length - 1];
+            const chestInput = lastRow.querySelector('.winner-chest');
+            if (chestInput) {
+                chestInput.focus();
+                chestInput.select();
+            }
+        } else {
+            addNewWinnerRowAndFocus(place);
+        }
+    }
+
+    const festResultModalEl = document.getElementById('festResultModal');
+    if (festResultModalEl) {
+        festResultModalEl.addEventListener('keydown', function(e) {
+            // Shift + Enter: Add multiple winners in the currently focused rank section
+            if (e.shiftKey && e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const active = document.activeElement;
+                if (active) {
+                    if (active.closest('#fest2ndWinnersContainer')) {
+                        addNewWinnerRowAndFocus('2nd');
+                        return;
+                    }
+                    if (active.closest('#fest3rdWinnersContainer')) {
+                        addNewWinnerRowAndFocus('3rd');
+                        return;
+                    }
+                }
+                addNewWinnerRowAndFocus('1st');
+                return;
+            }
+
+            // Ctrl + Enter: Switch rank focus (1st -> 2nd -> 3rd -> 1st loop)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const active = document.activeElement;
+                let targetPlace = '2nd';
+                if (active) {
+                    if (active.closest('#fest1stWinnersContainer')) {
+                        targetPlace = '2nd';
+                    } else if (active.closest('#fest2ndWinnersContainer')) {
+                        targetPlace = '3rd';
+                    } else if (active.closest('#fest3rdWinnersContainer')) {
+                        targetPlace = '1st';
+                    } else {
+                        targetPlace = '2nd';
+                    }
+                }
+                switchWinnerRankFocus(targetPlace);
+            }
+        });
+    }
+
     function formatWinnerCell(wData, badgeColorClass, defaultTextClass = 'text-success') {
         const list = Array.isArray(wData) ? wData : (wData && wData.name ? [wData] : []);
         if (list.length === 0) return '-';

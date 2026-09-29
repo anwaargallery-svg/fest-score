@@ -1484,6 +1484,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Render Teams / Houses Leaderboard
             const teams = sb.teams || [];
+            window.allFestTeams = teams;
             if (teamsContainer) {
                 if (sb.showGrandTotal === false) {
                     teamsContainer.style.display = 'none';
