@@ -1529,7 +1529,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (!name) {
                     return `
-                        <div class="flat-rank-row ${rowClass} d-flex align-items-center justify-content-between opacity-50 py-2 px-2.5 rounded-2 my-1" style="white-space: nowrap;">
+                        <div class="flat-rank-row ${rowClass} d-flex align-items-center justify-content-between opacity-50 py-2 px-2.5 rounded-2 my-1">
                             <span class="badge ${badgeClass} d-inline-flex align-items-center gap-1"><i class="bi ${rankIcon}"></i> ${rankText}</span>
                             <span class="text-muted small fw-semibold">-</span>
                         </div>
@@ -1537,15 +1537,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 return `
-                    <div class="flat-rank-row ${rowClass} d-flex align-items-center justify-content-between py-2 px-2.5 rounded-2 my-1" style="white-space: nowrap;">
+                    <div class="flat-rank-row ${rowClass} d-flex align-items-center justify-content-between py-2 px-2.5 rounded-2 my-1">
                         <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
                             <span class="badge ${badgeClass} d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 0.8rem;"><i class="bi ${rankIcon}"></i> ${rankText}</span>
-                            <div class="winner-info-block min-w-0 flex-grow-1" style="white-space: nowrap;">
-                                <div class="winner-student-name fw-bold text-dark text-truncate" style="font-size: 0.9rem; white-space: nowrap;">${name}</div>
-                                <div class="d-flex align-items-center gap-1 mt-0.5" style="white-space: nowrap;">
+                            <div class="winner-info-block min-w-0 flex-grow-1">
+                                <div class="winner-student-name fw-bold text-dark text-truncate" style="font-size: 0.9rem;">${name}</div>
+                                <div class="d-flex flex-wrap align-items-center gap-1 mt-0.5">
                                     ${groupName ? `<span class="flat-tag-team" style="font-size: 0.7rem; padding: 1px 6px;"><i class="bi bi-people-fill me-1"></i>${groupName}</span>` : ''}
                                     ${chestNo ? `<span class="flat-tag-chest" style="font-size: 0.7rem; padding: 1px 6px;">#${chestNo}</span>` : ''}
-                                    ${grade ? `<span class="flat-tag-grade" style="font-size: 0.7rem; padding: 1px 6px;">Grade ${grade}</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -1670,7 +1669,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 let filtered = window.allFestResults || [];
 
                 if (filterCategory !== 'all') {
-                    filtered = filtered.filter(r => String(r.category).toLowerCase() === filterCategory.toLowerCase());
+                    const catLower = filterCategory.toLowerCase();
+                    filtered = filtered.filter(r => {
+                        const rCat = String(r.category || '').toLowerCase();
+                        const rName = String(r.eventName || '').toLowerCase();
+                        if (catLower === 'group') {
+                            return rCat === 'group' || rCat.includes('group') || rName.includes('group') || r.isGroup === true;
+                        } else if (catLower === 'general') {
+                            return rCat === 'general' || rCat.includes('general') || (!rCat.includes('group') && !rName.includes('group'));
+                        }
+                        return rCat === catLower || rCat.includes(catLower);
+                    });
                 }
 
                 if (searchQuery.trim() !== '') {

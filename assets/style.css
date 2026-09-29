@@ -424,6 +424,11 @@ table {
   display: inline-flex;
   align-items: center;
   letter-spacing: 0.3px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .flat-tag-team {
@@ -439,6 +444,11 @@ table {
   text-transform: uppercase;
   letter-spacing: 0.3px;
   box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .flat-tag-grade {
@@ -451,6 +461,24 @@ table {
   border-radius: 6px !important;
   display: inline-flex;
   align-items: center;
+  letter-spacing: 0.3px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.flat-rank-row {
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.winner-info-block {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* Live Pulse Indicator */
@@ -585,7 +613,8 @@ table {
   flex: 0 0 calc(25% - 9px);
   min-width: calc(25% - 9px);
   max-width: calc(25% - 9px);
-  height: 195px;
+  min-height: 195px;
+  height: auto;
 }
 
 .cat-marquee-card-item .card {

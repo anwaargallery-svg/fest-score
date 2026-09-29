@@ -2828,7 +2828,7 @@ const initAdminDashboard = () => {
         if (list.length === 0) return '-';
         const formatted = list.map(w => {
             if (!w.name) return '';
-            return `<div class="mb-1"><strong>${w.name}</strong> ${w.chestNo ? `<small class="badge bg-dark">#${w.chestNo}</small>` : ''} <small class="${defaultTextClass}">(${w.team || '-'})</small> ${w.grade ? `<span class="badge bg-outline-dark text-dark border">${w.grade}</span>` : ''} <span class="badge ${badgeColorClass}">+${w.points || 0}</span></div>`;
+            return `<div class="mb-1 d-flex flex-wrap align-items-center gap-1"><strong class="text-truncate" style="max-width: 100%;">${w.name}</strong> ${w.chestNo ? `<small class="badge bg-dark text-truncate" style="max-width: 100%;">#${w.chestNo}</small>` : ''} <small class="${defaultTextClass}">(${w.team || '-'})</small> ${w.grade ? `<span class="badge bg-outline-dark text-dark border text-truncate" style="max-width: 100%;">${w.grade}</span>` : ''} <span class="badge ${badgeColorClass}">+${w.points || 0}</span></div>`;
         }).filter(Boolean);
         return formatted.length > 0 ? formatted.join('') : '-';
     }
