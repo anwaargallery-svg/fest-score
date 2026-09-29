@@ -1446,42 +1446,47 @@ document.addEventListener('DOMContentLoaded', function() {
             // Render Teams / Houses Leaderboard
             const teams = sb.teams || [];
             if (teamsContainer) {
-                if (teams.length === 0) {
-                    teamsContainer.innerHTML = '<div class="col-12 text-center text-muted">No teams registered yet.</div>';
+                if (sb.showGrandTotal === false) {
+                    teamsContainer.style.display = 'none';
                 } else {
-                    const maxPoints = Math.max(...teams.map(t => t.points || 0), 1);
-                    const rankIcons = ['bi-trophy-fill', 'bi-award-fill', 'bi-award', 'bi-star-fill'];
-                    const rankLabels = ['1st', '2nd', '3rd'];
-                    const rankBadges = ['bg-warning text-dark', 'bg-secondary text-white', 'bg-danger text-white', 'bg-info text-dark'];
+                    teamsContainer.style.display = 'flex';
+                    if (teams.length === 0) {
+                        teamsContainer.innerHTML = '<div class="col-12 text-center text-muted">No teams registered yet.</div>';
+                    } else {
+                        const maxPoints = Math.max(...teams.map(t => t.points || 0), 1);
+                        const rankIcons = ['bi-trophy-fill', 'bi-award-fill', 'bi-award', 'bi-star-fill'];
+                        const rankLabels = ['1st', '2nd', '3rd'];
+                        const rankBadges = ['bg-warning text-dark', 'bg-secondary text-white', 'bg-danger text-white', 'bg-info text-dark'];
 
-                    let teamsHTML = '';
-                    teams.forEach((team, index) => {
-                        const rank = index + 1;
-                        const rankIcon = rankIcons[index] || 'bi-star-fill';
-                        const rankLabel = rankLabels[index] || `#${rank}`;
-                        const badgeClass = rankBadges[index] || 'bg-light text-dark';
-                        const percent = Math.min(100, Math.round(((team.points || 0) / maxPoints) * 100));
+                        let teamsHTML = '';
+                        teams.forEach((team, index) => {
+                            const rank = index + 1;
+                            const rankIcon = rankIcons[index] || 'bi-star-fill';
+                            const rankLabel = rankLabels[index] || `#${rank}`;
+                            const badgeClass = rankBadges[index] || 'bg-light text-dark';
+                            const percent = Math.min(100, Math.round(((team.points || 0) / maxPoints) * 100));
 
-                        teamsHTML += `
-                            <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="${index * 50}">
-                                <div class="card flat-card h-100 overflow-hidden">
-                                    <div class="p-3 text-center border-bottom bg-light">
-                                        <span class="badge ${badgeClass} mb-1 small">${rankLabel} Place</span>
-                                        <h5 class="fw-bold mb-0 text-dark">${team.name}</h5>
-                                    </div>
-                                    <div class="card-body text-center p-3">
-                                        <div class="display-6 fw-bold text-dark mb-1" style="font-weight: 800; font-size: 2.25rem;">${team.points || 0}</div>
-                                        <small class="text-uppercase text-muted fw-semibold small" style="letter-spacing: 0.5px;">Points</small>
-                                        
-                                        <div class="progress mt-3" style="height: 5px; background-color: #e5e7eb; border-radius: 10px;">
-                                            <div class="progress-bar" role="progressbar" style="width: ${percent}%; background-color: ${team.color || '#10b981'}; border-radius: 10px;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
+                            teamsHTML += `
+                                <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="${index * 50}">
+                                    <div class="card flat-card h-100 overflow-hidden">
+                                        <div class="p-3 text-center border-bottom bg-light">
+                                            <span class="badge ${badgeClass} mb-1 small">${rankLabel} Place</span>
+                                            <h5 class="fw-bold mb-0 text-dark">${team.name}</h5>
+                                        </div>
+                                        <div class="card-body text-center p-3">
+                                            <div class="display-6 fw-bold text-dark mb-1" style="font-weight: 800; font-size: 2.25rem;">${team.points || 0}</div>
+                                            <small class="text-uppercase text-muted fw-semibold small" style="letter-spacing: 0.5px;">Points</small>
+                                            
+                                            <div class="progress mt-3" style="height: 5px; background-color: #e5e7eb; border-radius: 10px;">
+                                                <div class="progress-bar" role="progressbar" style="width: ${percent}%; background-color: ${team.color || '#10b981'}; border-radius: 10px;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        `;
-                    });
-                    teamsContainer.innerHTML = teamsHTML;
+                            `;
+                        });
+                        teamsContainer.innerHTML = teamsHTML;
+                    }
                 }
             }
 
