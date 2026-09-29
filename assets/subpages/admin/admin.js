@@ -3685,6 +3685,407 @@ const initAdminDashboard = () => {
             });
         }
     }
+
+        // --- PRINT SCORE LIST MANAGEMENT LOGIC ---
+        function getWinnersListNormalized(winnerData) {
+            if (!winnerData) return [];
+            if (Array.isArray(winnerData)) return winnerData.filter(w => w && (w.name || w.studentName || w.student));
+            if (winnerData.name || winnerData.studentName || winnerData.student) return [winnerData];
+            return [];
+        }
+
+        function generateScoreListPrintHTML(mode = 'totally', teamFilter = 'all', categoryFilter = 'all') {
+            const sb = window.currentScoreboardData || { teams: [], results: [] };
+            const festTitle = sb.festTitle || 'ATSA Arts Fest Scoreboard';
+            const teams = sb.teams || [];
+            const results = sb.results || [];
+            const printDate = new Date().toLocaleString('en-IN', { dateStyle: 'full', timeStyle: 'short' });
+
+            let modeTitle = 'OVERALL TOTAL SCORE LIST';
+            if (mode === 'team') {
+                modeTitle = teamFilter && teamFilter !== 'all' ? `TEAM SCORE LIST: ${teamFilter.toUpperCase()}` : 'EACH TEAM BASE SCORE LIST';
+            } else if (mode === 'category') {
+                modeTitle = categoryFilter && categoryFilter !== 'all' ? `CATEGORY SCORE LIST: ${categoryFilter.toUpperCase()}` : 'ALL CATEGORIES SCORE LIST';
+            }
+
+            let printHTML = `
+                <div class="print-page-wrapper">
+                    <div class="print-header text-center mb-4 pb-3 border-bottom border-2 border-dark">
+                        <h2 class="fw-bold text-uppercase mb-1" style="font-size: 1.5rem; color: #0f172a;">ANWARIYYA ARABIC COLLEGE</h2>
+                        <h3 class="fw-extrabold text-uppercase mb-2" style="font-size: 1.3rem; color: #1e293b;">${festTitle}</h3>
+                        <div class="d-flex justify-content-between align-items-center mt-3 px-2">
+                            <span class="badge bg-dark text-white text-uppercase px-3 py-1.5" style="font-size: 0.85rem;">
+                                ${modeTitle}
+                            </span>
+                            <small class="text-muted fw-semibold">Generated: ${printDate}</small>
+                        </div>
+                    </div>
+            `;
+
+            if (mode === 'totally') {
+                printHTML += `
+                    <div class="print-section mb-4">
+                        <h5 class="fw-bold text-uppercase mb-2 border-bottom pb-1" style="font-size: 1rem; color: #0f172a;">
+                            🏆 Overall Team Championship Standings
+                        </h5>
+                        <table class="table table-bordered table-striped align-middle mb-4" style="border: 2px solid #334155;">
+                            <thead style="background-color: #f1f5f9;">
+                                <tr>
+                                    <th class="text-center" style="width: 12%;">Rank</th>
+                                    <th style="width: 43%;">Team / Group Name</th>
+                                    <th class="text-center" style="width: 20%;">Code Range</th>
+                                    <th class="text-end pe-4" style="width: 25%;">Total Points</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                if (teams.length === 0) {
+                    printHTML += `<tr><td colspan="4" class="text-center py-3 text-muted">No teams registered.</td></tr>`;
+                } else {
+                    const sortedTeams = [...teams].sort((a, b) => (b.points || 0) - (a.points || 0));
+                    sortedTeams.forEach((team, index) => {
+                        const rankLabel = index === 0 ? '👑 1st (Champions)' : (index === 1 ? '🥈 2nd Place' : (index === 2 ? '🥉 3rd Place' : `#${index + 1}`));
+                        printHTML += `
+                            <tr>
+                                <td class="text-center fw-bold">${rankLabel}</td>
+                                <td class="fw-bold text-uppercase">${team.name}</td>
+                                <td class="text-center">${team.codeRange || '-'}</td>
+                                <td class="text-end pe-4 fw-extrabold fs-6">${team.points || 0} pts</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                printHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="print-section">
+                        <h5 class="fw-bold text-uppercase mb-2 border-bottom pb-1" style="font-size: 1rem; color: #0f172a;">
+                            📋 All Published Event Programme Results (${results.length} Events)
+                        </h5>
+                        <table class="table table-bordered align-middle" style="border: 1px solid #64748b; font-size: 0.85rem;">
+                            <thead style="background-color: #f1f5f9;">
+                                <tr>
+                                    <th class="text-center" style="width: 5%;">#</th>
+                                    <th style="width: 23%;">Event Name</th>
+                                    <th style="width: 12%;">Category</th>
+                                    <th style="width: 20%;">1st Place (Gold)</th>
+                                    <th style="width: 20%;">2nd Place (Silver)</th>
+                                    <th style="width: 20%;">3rd Place (Bronze)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                if (results.length === 0) {
+                    printHTML += `<tr><td colspan="6" class="text-center py-4 text-muted">No published event results available.</td></tr>`;
+                } else {
+                    results.forEach((res, idx) => {
+                        const formatW = (wList) => {
+                            if (wList.length === 0) return '<span class="text-muted">-</span>';
+                            return wList.map(w => {
+                                const name = w.name || w.studentName || w.student || '';
+                                const chest = w.chestNo || w.chest || '';
+                                const team = w.team || w.group || '';
+                                const pts = w.points !== undefined ? w.points : (w.pts || 0);
+                                return `<div><strong>${name}</strong> ${chest ? `(#${chest})` : ''}<br><small class="text-uppercase text-secondary">${team} (+${pts} pts)</small></div>`;
+                            }).join('<hr class="my-1">');
+                        };
+
+                        printHTML += `
+                            <tr>
+                                <td class="text-center fw-semibold">${idx + 1}</td>
+                                <td class="fw-bold text-uppercase">${res.eventName}</td>
+                                <td><span class="badge bg-light text-dark border">${res.category || 'General'}</span></td>
+                                <td>${formatW(getWinnersListNormalized(res.first))}</td>
+                                <td>${formatW(getWinnersListNormalized(res.second))}</td>
+                                <td>${formatW(getWinnersListNormalized(res.third))}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                printHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (mode === 'category') {
+                let filteredResults = results;
+                if (categoryFilter && categoryFilter !== 'all') {
+                    const catLower = categoryFilter.toLowerCase();
+                    filteredResults = results.filter(r => {
+                        const rCat = String(r.category || '').toLowerCase();
+                        const rName = String(r.eventName || '').toLowerCase();
+                        if (catLower === 'group') {
+                            return rCat === 'group' || rCat.includes('group') || rName.includes('group') || r.isGroup === true;
+                        } else if (catLower === 'general') {
+                            return rCat === 'general' || rCat.includes('general');
+                        }
+                        return rCat === catLower || rCat.includes(catLower);
+                    });
+                }
+
+                printHTML += `
+                    <div class="print-section mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
+                            <h5 class="fw-bold text-uppercase mb-0" style="font-size: 1rem; color: #0f172a;">
+                                🏷️ Category Wise Results: <span class="text-primary">${categoryFilter && categoryFilter !== 'all' ? categoryFilter : 'All Categories'}</span>
+                            </h5>
+                            <span class="badge bg-dark text-white">${filteredResults.length} Events</span>
+                        </div>
+                        
+                        <table class="table table-bordered align-middle" style="border: 1px solid #64748b; font-size: 0.85rem;">
+                            <thead style="background-color: #f1f5f9;">
+                                <tr>
+                                    <th class="text-center" style="width: 5%;">#</th>
+                                    <th style="width: 25%;">Event Name</th>
+                                    <th style="width: 14%;">Category</th>
+                                    <th style="width: 18%;">1st Place (Gold)</th>
+                                    <th style="width: 19%;">2nd Place (Silver)</th>
+                                    <th style="width: 19%;">3rd Place (Bronze)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                if (filteredResults.length === 0) {
+                    printHTML += `<tr><td colspan="6" class="text-center py-4 text-muted">No results found for category "${categoryFilter}".</td></tr>`;
+                } else {
+                    filteredResults.forEach((res, idx) => {
+                        const formatW = (wList) => {
+                            if (wList.length === 0) return '<span class="text-muted">-</span>';
+                            return wList.map(w => {
+                                const name = w.name || w.studentName || w.student || '';
+                                const chest = w.chestNo || w.chest || '';
+                                const team = w.team || w.group || '';
+                                const pts = w.points !== undefined ? w.points : (w.pts || 0);
+                                return `<div><strong>${name}</strong> ${chest ? `(#${chest})` : ''}<br><small class="text-uppercase text-secondary">${team} (+${pts} pts)</small></div>`;
+                            }).join('<hr class="my-1">');
+                        };
+
+                        printHTML += `
+                            <tr>
+                                <td class="text-center fw-semibold">${idx + 1}</td>
+                                <td class="fw-bold text-uppercase">${res.eventName}</td>
+                                <td><span class="badge bg-light text-dark border">${res.category || 'General'}</span></td>
+                                <td>${formatW(getWinnersListNormalized(res.first))}</td>
+                                <td>${formatW(getWinnersListNormalized(res.second))}</td>
+                                <td>${formatW(getWinnersListNormalized(res.third))}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                printHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (mode === 'team') {
+                let selectedTeams = teams;
+                if (teamFilter && teamFilter !== 'all') {
+                    selectedTeams = teams.filter(t => t.name.trim().toLowerCase() === teamFilter.trim().toLowerCase());
+                }
+
+                if (selectedTeams.length === 0) {
+                    printHTML += `<div class="alert alert-warning text-center">No team found matching "${teamFilter}".</div>`;
+                } else {
+                    selectedTeams.forEach((t, tIdx) => {
+                        const teamWins = [];
+                        results.forEach(res => {
+                            const checkWins = (wList, posText) => {
+                                wList.forEach(w => {
+                                    const tName = w.team || w.group || w.groupName || w.teamName || '';
+                                    if (tName.trim().toLowerCase() === t.name.trim().toLowerCase()) {
+                                        teamWins.push({
+                                            eventName: res.eventName,
+                                            category: res.category || 'General',
+                                            position: posText,
+                                            studentName: w.name || w.studentName || w.student || '-',
+                                            chestNo: w.chestNo || w.chest || '-',
+                                            grade: w.grade || w.rankGrade || '',
+                                            points: w.points !== undefined ? w.points : (w.pts || 0)
+                                        });
+                                    }
+                                });
+                            };
+                            checkWins(getWinnersListNormalized(res.first), '1st Place (Gold)');
+                            checkWins(getWinnersListNormalized(res.second), '2nd Place (Silver)');
+                            checkWins(getWinnersListNormalized(res.third), '3rd Place (Bronze)');
+                        });
+
+                        const totalPointsFromWins = teamWins.reduce((sum, win) => sum + Number(win.points || 0), 0);
+
+                        if (tIdx > 0) {
+                            printHTML += `<div class="page-break my-4"></div>`;
+                        }
+
+                        printHTML += `
+                            <div class="print-section mb-4">
+                                <div class="card border border-2 p-3 mb-3 bg-light" style="border-left: 6px solid ${t.color || '#0f172a'} !important;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h3 class="fw-extrabold text-uppercase mb-1" style="color: ${t.color || '#0f172a'};">${t.name}</h3>
+                                            <span class="badge bg-dark text-white me-2">Code Range: ${t.codeRange || '-'}</span>
+                                            <span class="badge bg-primary text-white">${teamWins.length} Prize Wins</span>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fs-3 fw-black text-dark mb-0">${t.points || totalPointsFromWins} <small class="fs-6">PTS</small></div>
+                                            <small class="text-muted fw-semibold">Overall Team Points</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h5 class="fw-bold text-uppercase mb-2" style="font-size: 0.95rem; color: #1e293b;">
+                                    🚩 Team Candidate Winners & Point Contribution
+                                </h5>
+                                
+                                <table class="table table-bordered align-middle" style="border: 1px solid #64748b; font-size: 0.85rem;">
+                                    <thead style="background-color: #f1f5f9;">
+                                        <tr>
+                                            <th class="text-center" style="width: 5%;">#</th>
+                                            <th style="width: 25%;">Event Name</th>
+                                            <th style="width: 14%;">Category</th>
+                                            <th style="width: 16%;">Position</th>
+                                            <th style="width: 22%;">Winner Student</th>
+                                            <th class="text-center" style="width: 10%;">Chest No</th>
+                                            <th class="text-end pe-3" style="width: 8%;">Points</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+
+                        if (teamWins.length === 0) {
+                            printHTML += `<tr><td colspan="7" class="text-center py-4 text-muted">No prize wins recorded yet for ${t.name}.</td></tr>`;
+                        } else {
+                            teamWins.forEach((win, wIdx) => {
+                                const posBadge = win.position.includes('1st') ? 'bg-warning text-dark' : (win.position.includes('2nd') ? 'bg-secondary text-white' : 'bg-danger text-white');
+                                printHTML += `
+                                    <tr>
+                                        <td class="text-center fw-semibold">${wIdx + 1}</td>
+                                        <td class="fw-bold text-uppercase">${win.eventName}</td>
+                                        <td><span class="badge bg-light text-dark border">${win.category}</span></td>
+                                        <td><span class="badge ${posBadge} px-2 py-1">${win.position}</span></td>
+                                        <td class="fw-bold text-dark">${win.studentName}</td>
+                                        <td class="text-center fw-bold">#${win.chestNo}</td>
+                                        <td class="text-end pe-3 fw-bold text-success">+${win.points}</td>
+                                    </tr>
+                                `;
+                            });
+                        }
+
+                        printHTML += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            printHTML += `
+                    <div class="print-footer mt-5 pt-4 border-top border-2 border-secondary">
+                        <div class="row text-center mt-3" style="font-size: 0.85rem;">
+                            <div class="col-4">
+                                <div class="border-top border-dark pt-2 mx-3">
+                                    <strong>Fest General Convener</strong>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="border-top border-dark pt-2 mx-3">
+                                    <strong>Stage Controller / Chief Judge</strong>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="border-top border-dark pt-2 mx-3">
+                                    <strong>Principal / Official Seal</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return printHTML;
+        }
+
+        function setupPrintScoreModalHandlers() {
+            const modalEl = document.getElementById('printScoreModal');
+            const modeSelect = document.getElementById('printModeSelect');
+            const teamFilterGroup = document.getElementById('printTeamFilterGroup');
+            const categoryFilterGroup = document.getElementById('printCategoryFilterGroup');
+            const teamSelect = document.getElementById('printTeamSelect');
+            const categorySelect = document.getElementById('printCategorySelect');
+            const previewContainer = document.getElementById('printPreviewContainer');
+            const triggerPrintBtn = document.getElementById('triggerPrintBtn');
+            const triggerPrintBtnFooter = document.getElementById('triggerPrintBtnFooter');
+
+            if (!modalEl) return;
+
+            const refreshPreview = () => {
+                const mode = modeSelect ? modeSelect.value : 'totally';
+                const teamFilter = teamSelect ? teamSelect.value : 'all';
+                const categoryFilter = categorySelect ? categorySelect.value : 'all';
+
+                if (teamFilterGroup) teamFilterGroup.style.display = mode === 'team' ? 'block' : 'none';
+                if (categoryFilterGroup) categoryFilterGroup.style.display = mode === 'category' ? 'block' : 'none';
+
+                if (previewContainer) {
+                    previewContainer.innerHTML = generateScoreListPrintHTML(mode, teamFilter, categoryFilter);
+                }
+            };
+
+            modalEl.addEventListener('show.bs.modal', async () => {
+                try {
+                    const res = await fetch('/api/scoreboard');
+                    const data = await res.json();
+                    if (data.success && data.scoreboard) {
+                        window.currentScoreboardData = data.scoreboard;
+                    }
+                } catch (e) {
+                    console.error('Error fetching latest scoreboard for print:', e);
+                }
+
+                const sb = window.currentScoreboardData || {};
+                const teams = sb.teams || [];
+                if (teamSelect) {
+                    let teamOpts = '<option value="all">All Teams (Separate pages per team)</option>';
+                    teams.forEach(t => {
+                        teamOpts += `<option value="${t.name}">${t.name}</option>`;
+                    });
+                    teamSelect.innerHTML = teamOpts;
+                }
+
+                refreshPreview();
+            });
+
+            if (modeSelect) modeSelect.addEventListener('change', refreshPreview);
+            if (teamSelect) teamSelect.addEventListener('change', refreshPreview);
+            if (categorySelect) categorySelect.addEventListener('change', refreshPreview);
+
+            const executePrint = () => {
+                const mode = modeSelect ? modeSelect.value : 'totally';
+                const teamFilter = teamSelect ? teamSelect.value : 'all';
+                const categoryFilter = categorySelect ? categorySelect.value : 'all';
+
+                const printableSection = document.getElementById('printableScoreListSection');
+                if (printableSection) {
+                    printableSection.innerHTML = generateScoreListPrintHTML(mode, teamFilter, categoryFilter);
+                    printableSection.classList.remove('d-none');
+                    window.print();
+                    printableSection.classList.add('d-none');
+                }
+            };
+
+            if (triggerPrintBtn) triggerPrintBtn.addEventListener('click', executePrint);
+            if (triggerPrintBtnFooter) triggerPrintBtnFooter.addEventListener('click', executePrint);
+        }
+
+        setupPrintScoreModalHandlers();
 };
 
 if (document.readyState === 'loading') {

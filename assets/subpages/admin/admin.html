@@ -976,6 +976,7 @@
                                         </button>
                                     </div>
                                     <button type="button" class="btn btn-primary btn-sm fw-bold text-nowrap flex-shrink-0" id="openAddResultModalBtn"><i class="bi bi-plus-lg me-1"></i> Add Event Result</button>
+                                    <button type="button" class="btn btn-warning text-dark btn-sm fw-bold text-nowrap flex-shrink-0 ms-1" data-bs-toggle="modal" data-bs-target="#printScoreModal"><i class="bi bi-printer-fill me-1"></i> Print Score List</button>
                                 </div>
                             </div>
                             <div class="table-responsive">
@@ -1638,6 +1639,76 @@
             </div>
         </div>
     </div>
+
+    <!-- Print Score List Options Modal -->
+    <div class="modal fade" id="printScoreModal" tabindex="-1" aria-labelledby="printScoreModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white p-3">
+                    <h5 class="modal-title fw-bold" id="printScoreModalLabel">
+                        <i class="bi bi-printer-fill text-warning me-2"></i>Print Score List Options
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-light">
+                    <!-- Filter & Options Controls -->
+                    <div class="card border-0 shadow-sm p-3 mb-4 bg-white">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-bold text-dark mb-1">1. Select Print Mode</label>
+                                <select id="printModeSelect" class="form-select fw-semibold border-primary">
+                                    <option value="totally" selected>🏆 Totally (Overall Score & Leaderboard)</option>
+                                    <option value="team">🚩 Each Team Base (Team-wise Breakdown)</option>
+                                    <option value="category">🏷️ Category Base (Category-wise Results)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4" id="printTeamFilterGroup" style="display: none;">
+                                <label class="form-label fw-bold text-dark mb-1">2. Select Team / House</label>
+                                <select id="printTeamSelect" class="form-select fw-semibold">
+                                    <option value="all">All Teams (Full Breakdown)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4" id="printCategoryFilterGroup" style="display: none;">
+                                <label class="form-label fw-bold text-dark mb-1">2. Select Category</label>
+                                <select id="printCategorySelect" class="form-select fw-semibold">
+                                    <option value="all">All Categories</option>
+                                    <option value="Sub-Junior">Sub-Junior</option>
+                                    <option value="Junior">Junior</option>
+                                    <option value="Senior">Senior</option>
+                                    <option value="Super Senior">Super Senior</option>
+                                    <option value="General">General</option>
+                                    <option value="Group">Group</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-4 ms-auto text-md-end">
+                                <button type="button" class="btn btn-success fw-bold px-4 py-2 rounded-pill shadow-sm" id="triggerPrintBtn">
+                                    <i class="bi bi-printer-fill me-1"></i> Print / Save PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Print Live Preview Container -->
+                    <div class="card border shadow-sm p-4 bg-white" id="printPreviewContainer" style="min-height: 400px;">
+                        <div class="text-center text-muted py-5">
+                            <div class="spinner-border text-warning" role="status"></div>
+                            <p class="mt-2">Generating Score List Preview...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-top p-3">
+                    <small class="text-muted me-auto"><i class="bi bi-info-circle me-1"></i> Tip: Select Destination as "Save as PDF" in print dialog to download PDF file.</small>
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary fw-bold rounded-pill px-4" id="triggerPrintBtnFooter">
+                        <i class="bi bi-printer-fill me-1"></i> Print Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Printable Document Area -->
+    <div id="printableScoreListSection" class="d-none"></div>
 
     <!-- Bootstrap Bundle JS (includes Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>

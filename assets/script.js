@@ -1723,7 +1723,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (catLower === 'group') {
                             return rCat === 'group' || rCat.includes('group') || rName.includes('group') || r.isGroup === true;
                         } else if (catLower === 'general') {
-                            return rCat === 'general' || rCat.includes('general') || (!rCat.includes('group') && !rName.includes('group'));
+                            return rCat === 'general' || rCat.includes('general');
                         }
                         return rCat === catLower || rCat.includes(catLower);
                     });

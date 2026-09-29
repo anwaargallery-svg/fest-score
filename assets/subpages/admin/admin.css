@@ -64,3 +64,48 @@ body {
 .table-hover tbody tr:hover, .table-hover tbody tr:hover td {
     background-color: rgba(16, 83, 33, 0.04) !important;
 }
+
+/* Print Scoreboard Styles */
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    #printableScoreListSection, #printableScoreListSection * {
+        visibility: visible !important;
+    }
+    #printableScoreListSection {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 15px !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .page-break {
+        page-break-before: always !important;
+        break-before: page !important;
+    }
+    .modal-backdrop, .modal {
+        display: none !important;
+    }
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    tr {
+        page-break-inside: avoid !important;
+    }
+    th, td {
+        border: 1px solid #1e293b !important;
+        padding: 6px 10px !important;
+        color: #000000 !important;
+    }
+    th {
+        background-color: #f1f5f9 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
