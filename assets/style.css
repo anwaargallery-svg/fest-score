@@ -432,9 +432,9 @@ table {
 }
 
 .flat-tag-team {
-  background-color: #2563eb !important;
-  color: #ffffff !important;
-  border: 1px solid #1d4ed8 !important;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   font-size: 0.85rem !important;
   font-weight: 800 !important;
   padding: 3px 9px !important;
@@ -443,7 +443,7 @@ table {
   align-items: center;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;

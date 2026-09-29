@@ -802,6 +802,45 @@
             }
         }
 
+        function getTeamStyle(teamName, teamsList = []) {
+            if (!teamName) return { bg: '#2563eb', color: '#ffffff' };
+            
+            let bg = '';
+            if (teamsList && Array.isArray(teamsList)) {
+                const found = teamsList.find(t => t && t.name && t.name.trim().toLowerCase() === teamName.trim().toLowerCase());
+                if (found && found.color) bg = found.color;
+            }
+
+            if (!bg && window.currentScoreboardData && Array.isArray(window.currentScoreboardData.teams)) {
+                const found = window.currentScoreboardData.teams.find(t => t && t.name && t.name.trim().toLowerCase() === teamName.trim().toLowerCase());
+                if (found && found.color) bg = found.color;
+            }
+
+            if (!bg) {
+                const lower = teamName.trim().toLowerCase();
+                if (lower.includes('emerald')) bg = '#198754';
+                else if (lower.includes('rub')) bg = '#dc3545';
+                else if (lower.includes('sapphir')) bg = '#0d6efd';
+                else if (lower.includes('topaz')) bg = '#ffc107';
+                else bg = '#2563eb';
+            }
+
+            let textColor = '#ffffff';
+            let hex = bg.replace('#', '').trim();
+            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+            if (hex.length === 6) {
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                if (luminance > 0.6) {
+                    textColor = '#111827';
+                }
+            }
+
+            return { bg, color: textColor };
+        }
+
         function matchWinner(w, q) {
             if (!w) return false;
             const list = Array.isArray(w) ? w : [w];
@@ -841,6 +880,8 @@
             const grade = w ? (w.grade || w.rankGrade || '') : '';
             const points = w && w.points !== undefined ? w.points : (w && w.pts !== undefined ? w.pts : 0);
 
+            const tStyle = getTeamStyle(groupName, (window.currentScoreboardData && window.currentScoreboardData.teams) || []);
+
             if (!name) {
                 return `
                     <div class="flat-rank-row ${rowClass} d-flex align-items-center justify-content-between opacity-50 py-2 px-2.5 rounded-2 my-1">
@@ -857,7 +898,7 @@
                         <div class="winner-info-block min-w-0 flex-grow-1">
                             <div class="winner-student-name fw-bold text-dark text-truncate" style="font-size: 0.9rem;">${name}</div>
                             <div class="d-flex flex-wrap align-items-center gap-1 mt-0.5">
-                                ${groupName ? `<span class="flat-tag-team" style="font-size: 0.7rem; padding: 1px 6px;"><i class="bi bi-people-fill me-1"></i>${groupName}</span>` : ''}
+                                ${groupName ? `<span class="flat-tag-team" style="background-color: ${tStyle.bg} !important; color: ${tStyle.color} !important; font-size: 0.7rem; padding: 1px 6px;"><i class="bi bi-people-fill me-1"></i>${groupName}</span>` : ''}
                                 ${chestNo ? `<span class="flat-tag-chest" style="font-size: 0.7rem; padding: 1px 6px;">#${chestNo}</span>` : ''}
                             </div>
                         </div>
