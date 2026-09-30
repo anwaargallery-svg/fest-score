@@ -191,10 +191,6 @@
                     SCOREBOARD</span>
             </div>
 
-            <button type="button" class="btn btn-warning text-dark btn-sm rounded-pill px-3 fw-bold shadow-sm"
-                data-bs-toggle="modal" data-bs-target="#printScoreModal">
-                <i class="bi bi-printer-fill me-1"></i> Print Score List
-            </button>
             <button type="button" class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold"
                 id="browserFullscreenBtn">
                 <i class="bi bi-arrows-fullscreen me-1"></i> Full Screen
@@ -207,11 +203,43 @@
 
     <div class="container-fluid px-0">
 
-        <!-- Live Team Standings Grid (Grand Total) -->
-        <div class="row g-3 justify-content-center mb-5" id="scoreboardTeamsContainer">
+        <!-- Live Team Standings Control Bar & Views -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 px-1" id="grandTotalHeaderControls" style="display: none !important;">
+            <div class="d-flex align-items-center gap-2">
+                <h5 class="fw-extrabold mb-0 text-dark text-uppercase d-flex align-items-center gap-2" style="font-size: 1.15rem; font-weight: 800;">
+                    <i class="bi bi-bar-chart-line-fill text-success me-1"></i> Live Team Standings (Grand Total)
+                </h5>
+            </div>
+            
+            <div class="btn-group btn-group-sm shadow-sm rounded-pill overflow-hidden border bg-white p-1" role="group" id="gtViewToggleGroup">
+                <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 fw-bold active" id="gtViewCardsBtn" title="Cards View">
+                    <i class="bi bi-grid-fill me-1"></i> Cards View
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-dark border-0 rounded-pill px-3 fw-bold" id="gtViewGraphBtn" title="2D Graph View">
+                    <i class="bi bi-bar-chart-fill me-1"></i> 2D Graph
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-dark border-0 rounded-pill px-3 fw-bold" id="gtViewBothBtn" title="Both Cards & Graph">
+                    <i class="bi bi-layout-split me-1"></i> Both
+                </button>
+            </div>
+        </div>
+
+        <!-- Live Team Standings Grid (Cards View) -->
+        <div class="row g-3 justify-content-center mb-4" id="scoreboardTeamsContainer" style="display: none !important;">
             <div class="col-12 text-center text-muted py-5">
                 <div class="spinner-border text-success" role="status"></div>
                 <p class="mt-2">Loading Live Team Standings...</p>
+            </div>
+        </div>
+
+        <!-- 2D Graph View Wrapper -->
+        <div class="card flat-card border shadow-sm p-4 mb-5 bg-white d-none" id="grandTotalChartCard">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2"><i class="bi bi-graph-up-arrow text-success me-1"></i>Grand Total 2D Team Standings Chart</h6>
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-bold small"><i class="bi bi-lightning-charge-fill me-1"></i>Live Stage Updates</span>
+            </div>
+            <div style="position: relative; height: 360px; width: 100%;">
+                <canvas id="grandTotalChartCanvas"></canvas>
             </div>
         </div>
 
@@ -270,10 +298,6 @@
                         <button type="button" class="btn btn-outline-light" data-filter="Sub-Junior">Sub-Junior</button>
                     </div>
 
-                    <button type="button" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold ms-1"
-                        data-bs-toggle="modal" data-bs-target="#printScoreModal">
-                        <i class="bi bi-printer-fill me-1"></i> Print Scores
-                    </button>
                 </div>
             </div>
 
@@ -330,7 +354,8 @@
 
     </div>
 
-    <!-- Bootstrap JS Bundle -->
+    <!-- Chart.js and Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
@@ -694,9 +719,7 @@
                 }
                 document.getElementById('festStatusBadge').innerHTML = `<i class="bi bi-trophy-fill me-1 text-warning"></i> ${sb.festStatus || 'LIVE SCOREBOARD'}`;
 
-                if (typeof sb.showGrandTotal === 'boolean') {
-                    updateGrandTotalVisibility(!sb.showGrandTotal);
-                }
+                updateGrandTotalVisibility(sb.showGrandTotal === true);
 
                 const festLogoImg = document.getElementById('festLogoHeader');
                 if (festLogoImg) {
@@ -759,6 +782,9 @@
                     });
                     teamsContainer.innerHTML = teamsHTML;
                 }
+
+                window.allFestTeams = teams;
+                applyGtViewMode(currentGtViewMode);
 
                 // Render Results View (Cards + Table) preserving current set position on background updates
                 allFestResults = sb.results || [];
@@ -1373,11 +1399,228 @@
             });
         });
 
+        // --- Grand Total 2D Graph & Standings View Switcher System ---
+        let grandTotalChartInstance = null;
+        let currentGtViewMode = localStorage.getItem('gt_view_mode') || 'cards';
+
+        function adjustColorOpacity(hex, opacity) {
+            if (!hex || typeof hex !== 'string') return `rgba(59, 130, 246, ${opacity})`;
+            let c = hex.replace('#', '');
+            if (c.length === 3) c = c.split('').map(x => x + x).join('');
+            if (c.length !== 6) return `rgba(59, 130, 246, ${opacity})`;
+            const rgb = parseInt(c, 16);
+            const r = (rgb >> 16) & 0xff;
+            const g = (rgb >> 8) & 0xff;
+            const b = (rgb >> 0) & 0xff;
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+
+        function renderGrandTotal2DChart(teams) {
+            const canvas = document.getElementById('grandTotalChartCanvas');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            const ctx = canvas.getContext('2d');
+            const labels = teams.map(t => t.name || 'Team');
+            const points = teams.map(t => Number(t.points || 0));
+
+            const backgroundColors = teams.map(t => {
+                const color = t.color || '#3b82f6';
+                if (ctx) {
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+                    gradient.addColorStop(0, color);
+                    gradient.addColorStop(1, adjustColorOpacity(color, 0.45));
+                    return gradient;
+                }
+                return color;
+            });
+
+            const borderColors = teams.map(t => t.color || '#3b82f6');
+
+            const barValuePlugin = {
+                id: 'barValueLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        meta.data.forEach((bar, index) => {
+                            const value = dataset.data[index];
+                            ctx.save();
+                            ctx.fillStyle = '#0f172a';
+                            ctx.font = 'bold 13px Poppins, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.fillText(`${value} PTS`, bar.x, bar.y - 6);
+                            ctx.restore();
+                        });
+                    });
+                }
+            };
+
+            if (grandTotalChartInstance) {
+                grandTotalChartInstance.data.labels = labels;
+                grandTotalChartInstance.data.datasets[0].data = points;
+                grandTotalChartInstance.data.datasets[0].backgroundColor = backgroundColors;
+                grandTotalChartInstance.data.datasets[0].borderColor = borderColors;
+                grandTotalChartInstance.update();
+            } else {
+                grandTotalChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Grand Total Points',
+                            data: points,
+                            backgroundColor: backgroundColors,
+                            borderColor: borderColors,
+                            borderWidth: 2,
+                            borderRadius: 10,
+                            borderSkipped: false,
+                            barPercentage: 0.55,
+                            categoryPercentage: 0.7
+                        }]
+                    },
+                    plugins: [barValuePlugin],
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: { top: 25, bottom: 5, left: 10, right: 10 }
+                        },
+                        animation: {
+                            duration: 900,
+                            easing: 'easeOutQuart'
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                                titleFont: { size: 14, weight: 'bold', family: 'Poppins' },
+                                bodyFont: { size: 13, family: 'Poppins' },
+                                padding: 12,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        return ` Score: ${context.parsed.y} Points`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(226, 232, 240, 0.8)', drawBorder: false },
+                                ticks: { font: { family: 'Poppins', weight: '600' }, color: '#64748b' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { family: 'Poppins', weight: '800', size: 13 }, color: '#1e293b' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        let isGrandTotalEnabled = false;
+
+        function applyGtViewMode(mode) {
+            if (mode) {
+                currentGtViewMode = mode;
+                localStorage.setItem('gt_view_mode', mode);
+            }
+
+            const cardsContainer = document.getElementById('scoreboardTeamsContainer');
+            const chartCard = document.getElementById('grandTotalChartCard');
+
+            const btnCards = document.getElementById('gtViewCardsBtn');
+            const btnGraph = document.getElementById('gtViewGraphBtn');
+            const btnBoth = document.getElementById('gtViewBothBtn');
+
+            [btnCards, btnGraph, btnBoth].forEach(btn => {
+                if (btn) {
+                    btn.classList.remove('active', 'btn-dark');
+                    btn.classList.add('btn-outline-dark');
+                }
+            });
+
+            if (!isGrandTotalEnabled) {
+                if (cardsContainer) cardsContainer.style.setProperty('display', 'none', 'important');
+                if (chartCard) {
+                    chartCard.classList.add('d-none');
+                    chartCard.style.setProperty('display', 'none', 'important');
+                }
+                return;
+            }
+
+            if (currentGtViewMode === 'cards') {
+                if (cardsContainer) cardsContainer.style.setProperty('display', 'flex', 'important');
+                if (chartCard) {
+                    chartCard.classList.add('d-none');
+                    chartCard.style.setProperty('display', 'none', 'important');
+                }
+                if (btnCards) {
+                    btnCards.classList.add('active', 'btn-dark');
+                    btnCards.classList.remove('btn-outline-dark');
+                }
+            } else if (currentGtViewMode === 'graph') {
+                if (cardsContainer) cardsContainer.style.setProperty('display', 'none', 'important');
+                if (chartCard) {
+                    chartCard.classList.remove('d-none');
+                    chartCard.style.setProperty('display', 'block', 'important');
+                }
+                if (btnGraph) {
+                    btnGraph.classList.add('active', 'btn-dark');
+                    btnGraph.classList.remove('btn-outline-dark');
+                }
+                if (window.allFestTeams && window.allFestTeams.length > 0) {
+                    renderGrandTotal2DChart(window.allFestTeams);
+                }
+            } else if (currentGtViewMode === 'both') {
+                if (cardsContainer) cardsContainer.style.setProperty('display', 'flex', 'important');
+                if (chartCard) {
+                    chartCard.classList.remove('d-none');
+                    chartCard.style.setProperty('display', 'block', 'important');
+                }
+                if (btnBoth) {
+                    btnBoth.classList.add('active', 'btn-dark');
+                    btnBoth.classList.remove('btn-outline-dark');
+                }
+                if (window.allFestTeams && window.allFestTeams.length > 0) {
+                    renderGrandTotal2DChart(window.allFestTeams);
+                }
+            }
+        }
+
+        function setupGtViewToggleListeners() {
+            const btnCards = document.getElementById('gtViewCardsBtn');
+            const btnGraph = document.getElementById('gtViewGraphBtn');
+            const btnBoth = document.getElementById('gtViewBothBtn');
+
+            if (btnCards) btnCards.onclick = () => applyGtViewMode('cards');
+            if (btnGraph) btnGraph.onclick = () => applyGtViewMode('graph');
+            if (btnBoth) btnBoth.onclick = () => applyGtViewMode('both');
+        }
+
+        setupGtViewToggleListeners();
+
         // Toggle Grand Total (Live Team Standings) visibility
-        function updateGrandTotalVisibility(hide) {
+        function updateGrandTotalVisibility(show) {
+            isGrandTotalEnabled = (show === true);
             const grandTotalContainer = document.getElementById('scoreboardTeamsContainer');
-            if (!grandTotalContainer) return;
-            grandTotalContainer.style.display = hide ? 'none' : 'flex';
+            const grandTotalControls = document.getElementById('grandTotalHeaderControls');
+            const grandTotalCard = document.getElementById('grandTotalChartCard');
+
+            if (!isGrandTotalEnabled) {
+                if (grandTotalContainer) grandTotalContainer.style.setProperty('display', 'none', 'important');
+                if (grandTotalControls) grandTotalControls.style.setProperty('display', 'none', 'important');
+                if (grandTotalCard) {
+                    grandTotalCard.classList.add('d-none');
+                    grandTotalCard.style.setProperty('display', 'none', 'important');
+                }
+            } else {
+                if (grandTotalControls) grandTotalControls.style.setProperty('display', 'flex', 'important');
+                applyGtViewMode(currentGtViewMode);
+            }
         }
 
         // Export Bulk Scoreboard Data
@@ -1607,16 +1850,9 @@
         // Initial Load & Auto-Refresh every 5 seconds for live stage LED screen updates
         fetchScoreboardData();
         setInterval(fetchScoreboardData, 5000);
-
-        // --- PRINT SCORE LIST MANAGEMENT LOGIC ---
-        function getWinnersListNormalized(winnerData) {
-            if (!winnerData) return [];
-            if (Array.isArray(winnerData)) return winnerData.filter(w => w && (w.name || w.studentName || w.student));
-            if (winnerData.name || winnerData.studentName || winnerData.student) return [winnerData];
-            return [];
-        }
-
-        function generateScoreListPrintHTML(mode = 'totally', teamFilter = 'all', categoryFilter = 'all') {
+        function generateScoreListPrintHTML() { return ''; }
+        /* removed print generator */
+        if (false) {
             const sb = window.currentScoreboardData || { teams: [], results: [] };
             const festTitle = sb.festTitle || 'ATSA Arts Fest Scoreboard';
             const teams = sb.teams || [];
@@ -1645,8 +1881,20 @@
                     </div>
             `;
 
+            const isGtActive = sb.showGrandTotal === true;
+
             if (mode === 'totally') {
                 // --- TOTALLY (OVERALL TOTAL) SCORE LIST ---
+                if (!isGtActive) {
+                    printHTML += `
+                        <div class="alert alert-warning text-center p-4 my-4 border rounded-3">
+                            <h5 class="fw-bold text-dark mb-1"><i class="bi bi-shield-lock-fill text-warning me-2"></i>Overall Total Championship Standings are Hidden</h5>
+                            <p class="text-muted mb-0 small">Grand Total points are currently hidden by Administrator. Please select <strong>Category Base</strong> or <strong>Each Team Base</strong> mode to view published result lists.</p>
+                        </div>
+                    </div>`;
+                    return printHTML;
+                }
+
                 printHTML += `
                     <div class="print-section mb-4">
                         <h5 class="fw-bold text-uppercase mb-2 border-bottom pb-1" style="font-size: 1rem; color: #0f172a;">
@@ -1860,8 +2108,7 @@
                                             <span class="badge bg-primary text-white">${teamWins.length} Prize Wins</span>
                                         </div>
                                         <div class="text-end">
-                                            <div class="fs-3 fw-black text-dark mb-0">${t.points || totalPointsFromWins} <small class="fs-6">PTS</small></div>
-                                            <small class="text-muted fw-semibold">Overall Team Points</small>
+                                            ${isGtActive ? `<div class="fs-3 fw-black text-dark mb-0">${t.points || totalPointsFromWins} <small class="fs-6">PTS</small></div><small class="text-muted fw-semibold">Overall Team Points</small>` : `<span class="badge bg-secondary px-3 py-2 fs-6">Published Results</span>`}
                                         </div>
                                     </div>
                                 </div>
@@ -1939,158 +2186,9 @@
 
             return printHTML;
         }
-
-        function setupPrintScoreModalHandlers() {
-            const modalEl = document.getElementById('printScoreModal');
-            const modeSelect = document.getElementById('printModeSelect');
-            const teamFilterGroup = document.getElementById('printTeamFilterGroup');
-            const categoryFilterGroup = document.getElementById('printCategoryFilterGroup');
-            const teamSelect = document.getElementById('printTeamSelect');
-            const categorySelect = document.getElementById('printCategorySelect');
-            const previewContainer = document.getElementById('printPreviewContainer');
-            const triggerPrintBtn = document.getElementById('triggerPrintBtn');
-            const triggerPrintBtnFooter = document.getElementById('triggerPrintBtnFooter');
-
-            if (!modalEl) return;
-
-            const refreshPreview = () => {
-                const mode = modeSelect ? modeSelect.value : 'totally';
-                const teamFilter = teamSelect ? teamSelect.value : 'all';
-                const categoryFilter = categorySelect ? categorySelect.value : 'all';
-
-                if (teamFilterGroup) teamFilterGroup.style.display = mode === 'team' ? 'block' : 'none';
-                if (categoryFilterGroup) categoryFilterGroup.style.display = mode === 'category' ? 'block' : 'none';
-
-                if (previewContainer) {
-                    previewContainer.innerHTML = generateScoreListPrintHTML(mode, teamFilter, categoryFilter);
-                }
-            };
-
-            modalEl.addEventListener('show.bs.modal', async () => {
-                try {
-                    const res = await fetch(getApiUrl('/api/scoreboard'));
-                    const data = await res.json();
-                    if (data.success && data.scoreboard) {
-                        window.currentScoreboardData = data.scoreboard;
-                    }
-                } catch (e) {
-                    console.error('Error fetching latest scoreboard for print:', e);
-                }
-
-                // Populate Team Select dropdown
-                const sb = window.currentScoreboardData || {};
-                const teams = sb.teams || [];
-                if (teamSelect) {
-                    let teamOpts = '<option value="all">All Teams (Separate pages per team)</option>';
-                    teams.forEach(t => {
-                        teamOpts += `<option value="${t.name}">${t.name}</option>`;
-                    });
-                    teamSelect.innerHTML = teamOpts;
-                }
-
-                refreshPreview();
-            });
-
-            if (modeSelect) modeSelect.addEventListener('change', refreshPreview);
-            if (teamSelect) teamSelect.addEventListener('change', refreshPreview);
-            if (categorySelect) categorySelect.addEventListener('change', refreshPreview);
-
-            const executePrint = () => {
-                const mode = modeSelect ? modeSelect.value : 'totally';
-                const teamFilter = teamSelect ? teamSelect.value : 'all';
-                const categoryFilter = categorySelect ? categorySelect.value : 'all';
-
-                const printableSection = document.getElementById('printableScoreListSection');
-                if (printableSection) {
-                    printableSection.innerHTML = generateScoreListPrintHTML(mode, teamFilter, categoryFilter);
-                    printableSection.classList.remove('d-none');
-                    window.print();
-                    printableSection.classList.add('d-none');
-                }
-            };
-
-            if (triggerPrintBtn) triggerPrintBtn.addEventListener('click', executePrint);
-            if (triggerPrintBtnFooter) triggerPrintBtnFooter.addEventListener('click', executePrint);
         }
-
-        setupPrintScoreModalHandlers();
     </script>
 
-    <!-- Print Score List Options Modal -->
-    <div class="modal fade" id="printScoreModal" tabindex="-1" aria-labelledby="printScoreModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-dark text-white p-3">
-                    <h5 class="modal-title fw-bold" id="printScoreModalLabel">
-                        <i class="bi bi-printer-fill text-warning me-2"></i>Print Score List Options
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4 bg-light">
-                    <!-- Filter & Options Controls -->
-                    <div class="card border-0 shadow-sm p-3 mb-4 bg-white">
-                        <div class="row g-3 align-items-center">
-                            <div class="col-12 col-md-4">
-                                <label class="form-label fw-bold text-dark mb-1">1. Select Print Mode</label>
-                                <select id="printModeSelect" class="form-select fw-semibold border-primary">
-                                    <option value="totally" selected>🏆 Totally (Overall Score & Leaderboard)</option>
-                                    <option value="team">🚩 Each Team Base (Team-wise Breakdown)</option>
-                                    <option value="category">🏷️ Category Base (Category-wise Results)</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-sm-6 col-md-4" id="printTeamFilterGroup" style="display: none;">
-                                <label class="form-label fw-bold text-dark mb-1">2. Select Team / House</label>
-                                <select id="printTeamSelect" class="form-select fw-semibold">
-                                    <option value="all">All Teams (Full Breakdown)</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-sm-6 col-md-4" id="printCategoryFilterGroup" style="display: none;">
-                                <label class="form-label fw-bold text-dark mb-1">2. Select Category</label>
-                                <select id="printCategorySelect" class="form-select fw-semibold">
-                                    <option value="all">All Categories</option>
-                                    <option value="Sub-Junior">Sub-Junior</option>
-                                    <option value="Junior">Junior</option>
-                                    <option value="Senior">Senior</option>
-                                    <option value="Super Senior">Super Senior</option>
-                                    <option value="General">General</option>
-                                    <option value="Group">Group</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-md-4 ms-auto text-md-end">
-                                <button type="button" class="btn btn-success fw-bold px-4 py-2 rounded-pill shadow-sm"
-                                    id="triggerPrintBtn">
-                                    <i class="bi bi-printer-fill me-1"></i> Print / Save PDF
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Print Live Preview Container -->
-                    <div class="card border shadow-sm p-4 bg-white" id="printPreviewContainer"
-                        style="min-height: 400px;">
-                        <div class="text-center text-muted py-5">
-                            <div class="spinner-border text-warning" role="status"></div>
-                            <p class="mt-2">Generating Score List Preview...</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-white border-top p-3">
-                    <small class="text-muted me-auto"><i class="bi bi-info-circle me-1"></i> Tip: Select Destination as
-                        "Save as PDF" in print dialog to download PDF file.</small>
-                    <button type="button" class="btn btn-secondary rounded-pill px-4"
-                        data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary fw-bold rounded-pill px-4" id="triggerPrintBtnFooter">
-                        <i class="bi bi-printer-fill me-1"></i> Print Now
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Hidden Printable Document Area -->
-    <div id="printableScoreListSection" class="d-none"></div>
 </body>
 
 </html>

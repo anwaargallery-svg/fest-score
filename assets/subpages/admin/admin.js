@@ -2980,7 +2980,7 @@ const initAdminDashboard = () => {
 
             const adminGrandTotalSwitch = document.getElementById('adminGrandTotalSwitch');
             if (adminGrandTotalSwitch) {
-                adminGrandTotalSwitch.checked = sb.showGrandTotal !== false;
+                adminGrandTotalSwitch.checked = sb.showGrandTotal === true;
             }
 
             const statusBadge = document.getElementById('adminAnnouncementStatusBadge');
@@ -3722,7 +3722,19 @@ const initAdminDashboard = () => {
                     </div>
             `;
 
+            const isGtActive = sb.showGrandTotal === true;
+
             if (mode === 'totally') {
+                if (!isGtActive) {
+                    printHTML += `
+                        <div class="alert alert-warning text-center p-4 my-4 border rounded-3">
+                            <h5 class="fw-bold text-dark mb-1"><i class="bi bi-shield-lock-fill text-warning me-2"></i>Overall Total Championship Standings are Hidden</h5>
+                            <p class="text-muted mb-0 small">Grand Total points are currently hidden by Administrator. Please select <strong>Category Base</strong> or <strong>Each Team Base</strong> mode to view published result lists.</p>
+                        </div>
+                    </div>`;
+                    return printHTML;
+                }
+
                 printHTML += `
                     <div class="print-section mb-4">
                         <h5 class="fw-bold text-uppercase mb-2 border-bottom pb-1" style="font-size: 1rem; color: #0f172a;">
@@ -3934,8 +3946,7 @@ const initAdminDashboard = () => {
                                             <span class="badge bg-primary text-white">${teamWins.length} Prize Wins</span>
                                         </div>
                                         <div class="text-end">
-                                            <div class="fs-3 fw-black text-dark mb-0">${t.points || totalPointsFromWins} <small class="fs-6">PTS</small></div>
-                                            <small class="text-muted fw-semibold">Overall Team Points</small>
+                                            ${isGtActive ? `<div class="fs-3 fw-black text-dark mb-0">${t.points || totalPointsFromWins} <small class="fs-6">PTS</small></div><small class="text-muted fw-semibold">Overall Team Points</small>` : `<span class="badge bg-secondary px-3 py-2 fs-6">Published Results</span>`}
                                         </div>
                                     </div>
                                 </div>
@@ -4027,7 +4038,23 @@ const initAdminDashboard = () => {
             if (!modalEl) return;
 
             const refreshPreview = () => {
-                const mode = modeSelect ? modeSelect.value : 'totally';
+                const isGtActive = (window.currentScoreboardData && window.currentScoreboardData.showGrandTotal === true);
+                const totallyOpt = modeSelect ? modeSelect.querySelector('option[value="totally"]') : null;
+
+                if (totallyOpt) {
+                    if (!isGtActive) {
+                        totallyOpt.hidden = true;
+                        totallyOpt.disabled = true;
+                        if (modeSelect && modeSelect.value === 'totally') {
+                            modeSelect.value = 'category';
+                        }
+                    } else {
+                        totallyOpt.hidden = false;
+                        totallyOpt.disabled = false;
+                    }
+                }
+
+                const mode = modeSelect ? modeSelect.value : 'category';
                 const teamFilter = teamSelect ? teamSelect.value : 'all';
                 const categoryFilter = categorySelect ? categorySelect.value : 'all';
 
