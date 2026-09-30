@@ -2987,7 +2987,7 @@ const initAdminDashboard = () => {
 
             const adminGrandTotalSwitch = document.getElementById('adminGrandTotalSwitch');
             if (adminGrandTotalSwitch) {
-                adminGrandTotalSwitch.checked = sb.showGrandTotal === true;
+                adminGrandTotalSwitch.checked = sb.showGrandTotal !== false;
             }
 
             const adminKalaprathibhaSwitch = document.getElementById('adminKalaprathibhaSwitch');
@@ -3248,14 +3248,16 @@ const initAdminDashboard = () => {
     if (scoreboardSettingsForm) {
         scoreboardSettingsForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const sbFestLogoInput = document.getElementById('sbFestLogoInput');
-            const sbFestTypographyInput = document.getElementById('sbFestTypographyInput');
+            const adminGrandTotalSwitch = document.getElementById('adminGrandTotalSwitch');
+            const adminKalaprathibhaSwitch = document.getElementById('adminKalaprathibhaSwitch');
             const payload = {
                 enabled: document.getElementById('sbEnableSwitch').checked,
                 festTitle: document.getElementById('sbFestTitleInput').value.trim(),
                 festStatus: document.getElementById('sbFestStatusSelect').value,
                 festLogo: sbFestLogoInput ? sbFestLogoInput.value : '',
-                festTypography: sbFestTypographyInput ? sbFestTypographyInput.value : ''
+                festTypography: sbFestTypographyInput ? sbFestTypographyInput.value : '',
+                showGrandTotal: adminGrandTotalSwitch ? adminGrandTotalSwitch.checked : true,
+                showKalaprathibha: adminKalaprathibhaSwitch ? adminKalaprathibhaSwitch.checked : false
             };
 
             const res = await fetch(getApiUrl('/api/admin/scoreboard/settings'), {
@@ -3753,7 +3755,7 @@ const initAdminDashboard = () => {
                     </div>
             `;
 
-            const isGtActive = sb.showGrandTotal === true;
+            const isGtActive = sb.showGrandTotal !== false;
 
             if (mode === 'totally') {
                 if (!isGtActive) {
@@ -4069,7 +4071,7 @@ const initAdminDashboard = () => {
             if (!modalEl) return;
 
             const refreshPreview = () => {
-                const isGtActive = (window.currentScoreboardData && window.currentScoreboardData.showGrandTotal === true);
+                const isGtActive = (window.currentScoreboardData && window.currentScoreboardData.showGrandTotal !== false);
                 const totallyOpt = modeSelect ? modeSelect.querySelector('option[value="totally"]') : null;
 
                 if (totallyOpt) {

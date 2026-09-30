@@ -667,7 +667,7 @@ app.get('/api/scoreboard', (req, res) => {
   if (!db.scoreboard) {
     db.scoreboard = getInitialScoreboard();
   }
-  if (db.scoreboard.showGrandTotal === undefined || db.scoreboard.showGrandTotal === false) {
+  if (db.scoreboard.showGrandTotal === undefined) {
     db.scoreboard.showGrandTotal = true;
     saveDb();
   }

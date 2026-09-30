@@ -1529,18 +1529,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const grandTotalControls = document.getElementById('grandTotalHeaderControls');
             const grandTotalCard = document.getElementById('grandTotalChartCard');
 
-            if (teamsContainer) {
-                if (sb.showGrandTotal !== true) {
-                    isGrandTotalEnabled = false;
-                    teamsContainer.style.setProperty('display', 'none', 'important');
-                    if (grandTotalControls) grandTotalControls.style.setProperty('display', 'none', 'important');
-                    if (grandTotalCard) {
-                        grandTotalCard.classList.add('d-none');
-                        grandTotalCard.style.setProperty('display', 'none', 'important');
-                    }
-                } else {
-                    isGrandTotalEnabled = true;
-                    if (grandTotalControls) grandTotalControls.style.setProperty('display', 'flex', 'important');
+            const isGtShow = (sb.showGrandTotal !== false);
+            isGrandTotalEnabled = isGtShow;
+
+            if (!isGtShow) {
+                if (teamsContainer) teamsContainer.style.setProperty('display', 'none', 'important');
+                if (grandTotalControls) grandTotalControls.style.setProperty('display', 'none', 'important');
+                if (grandTotalCard) {
+                    grandTotalCard.classList.add('d-none');
+                    grandTotalCard.style.setProperty('display', 'none', 'important');
+                }
+            } else {
+                if (grandTotalControls) grandTotalControls.style.setProperty('display', 'flex', 'important');
+                if (teamsContainer) {
+                    teamsContainer.style.removeProperty('display');
                     if (teams.length === 0) {
                         teamsContainer.innerHTML = '<div class="col-12 text-center text-muted">No teams registered yet.</div>';
                     } else {
@@ -1578,9 +1580,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                         teamsContainer.innerHTML = teamsHTML;
                     }
-                    if (typeof applyGtViewMode === 'function') {
-                        applyGtViewMode(currentGtViewMode);
-                    }
+                }
+                if (typeof applyGtViewMode === 'function') {
+                    applyGtViewMode(currentGtViewMode);
                 }
             }
 

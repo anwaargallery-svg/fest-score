@@ -35,7 +35,7 @@
   "news": [],
   "scoreboard": {
     "enabled": true,
-    "showGrandTotal": true,
+    "showGrandTotal": false,
     "showKalaprathibha": false,
     "festTitle": "അൻവരിയ്യ സർഗ്ഗോത്സവ് 2026",
     "festStatus": "Live",
