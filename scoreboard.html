@@ -191,6 +191,7 @@
                     SCOREBOARD</span>
             </div>
 
+
             <button type="button" class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold"
                 id="browserFullscreenBtn">
                 <i class="bi bi-arrows-fullscreen me-1"></i> Full Screen
@@ -204,28 +205,35 @@
     <div class="container-fluid px-0">
 
         <!-- Live Team Standings Control Bar & Views -->
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 px-1" id="grandTotalHeaderControls" style="display: none !important;">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 px-1"
+            id="grandTotalHeaderControls" style="display: none !important;">
             <div class="d-flex align-items-center gap-2">
-                <h5 class="fw-extrabold mb-0 text-dark text-uppercase d-flex align-items-center gap-2" style="font-size: 1.15rem; font-weight: 800;">
+                <h5 class="fw-extrabold mb-0 text-dark text-uppercase d-flex align-items-center gap-2"
+                    style="font-size: 1.15rem; font-weight: 800;">
                     <i class="bi bi-bar-chart-line-fill text-success me-1"></i> Live Team Standings (Grand Total)
                 </h5>
             </div>
-            
-            <div class="btn-group btn-group-sm shadow-sm rounded-pill overflow-hidden border bg-white p-1" role="group" id="gtViewToggleGroup">
-                <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 fw-bold active" id="gtViewCardsBtn" title="Cards View">
+
+            <div class="btn-group btn-group-sm shadow-sm rounded-pill overflow-hidden border bg-white p-1" role="group"
+                id="gtViewToggleGroup">
+                <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 fw-bold active" id="gtViewCardsBtn"
+                    title="Cards View">
                     <i class="bi bi-grid-fill me-1"></i> Cards View
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-dark border-0 rounded-pill px-3 fw-bold" id="gtViewGraphBtn" title="2D Graph View">
+                <button type="button" class="btn btn-sm btn-outline-dark border-0 rounded-pill px-3 fw-bold"
+                    id="gtViewGraphBtn" title="2D Graph View">
                     <i class="bi bi-bar-chart-fill me-1"></i> 2D Graph
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-dark border-0 rounded-pill px-3 fw-bold" id="gtViewBothBtn" title="Both Cards & Graph">
+                <button type="button" class="btn btn-sm btn-outline-dark border-0 rounded-pill px-3 fw-bold"
+                    id="gtViewBothBtn" title="Both Cards & Graph">
                     <i class="bi bi-layout-split me-1"></i> Both
                 </button>
             </div>
         </div>
 
         <!-- Live Team Standings Grid (Cards View) -->
-        <div class="row g-3 justify-content-center mb-4" id="scoreboardTeamsContainer" style="display: none !important;">
+        <div class="row g-3 justify-content-center mb-4" id="scoreboardTeamsContainer"
+            style="display: none !important;">
             <div class="col-12 text-center text-muted py-5">
                 <div class="spinner-border text-success" role="status"></div>
                 <p class="mt-2">Loading Live Team Standings...</p>
@@ -235,8 +243,11 @@
         <!-- 2D Graph View Wrapper -->
         <div class="card flat-card border shadow-sm p-4 mb-5 bg-white d-none" id="grandTotalChartCard">
             <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2"><i class="bi bi-graph-up-arrow text-success me-1"></i>Grand Total 2D Team Standings Chart</h6>
-                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-bold small"><i class="bi bi-lightning-charge-fill me-1"></i>Live Stage Updates</span>
+                <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2"><i
+                        class="bi bi-graph-up-arrow text-success me-1"></i>Grand Total 2D Team Standings Chart</h6>
+                <span
+                    class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-bold small"><i
+                        class="bi bi-lightning-charge-fill me-1"></i>Live Stage Updates</span>
             </div>
             <div style="position: relative; height: 360px; width: 100%;">
                 <canvas id="grandTotalChartCanvas"></canvas>
@@ -297,6 +308,8 @@
                         <button type="button" class="btn btn-outline-light" data-filter="Junior">Junior</button>
                         <button type="button" class="btn btn-outline-light" data-filter="Sub-Junior">Sub-Junior</button>
                     </div>
+
+
 
                 </div>
             </div>
@@ -362,7 +375,16 @@
     <script>
         AOS.init({ duration: 600, once: true });
 
-        const getApiUrl = (endpoint) => endpoint;
+        const getApiUrl = (endpoint) => {
+            if (window.location.protocol === 'file:' || !window.location.hostname) {
+                return `http://localhost:3000${endpoint}`;
+            }
+            if (window.location.port && window.location.port !== '3000' && window.location.port !== '80' && window.location.port !== '443') {
+                const host = window.location.hostname || 'localhost';
+                return `http://${host}:3000${endpoint}`;
+            }
+            return endpoint;
+        };
 
         let allFestResults = [];
         let lastSbDataJSON = '';
@@ -685,7 +707,34 @@
 
         async function fetchScoreboardData() {
             try {
-                const res = await fetch(getApiUrl('/api/scoreboard'));
+                let res = null;
+                const hostname = window.location.hostname || 'localhost';
+                const urlsToTry = [
+                    getApiUrl('/api/scoreboard'),
+                    `http://${hostname}:3000/api/scoreboard`,
+                    'http://localhost:3000/api/scoreboard',
+                    'http://127.0.0.1:3000/api/scoreboard',
+                    '/api/scoreboard'
+                ];
+                const uniqueUrls = [...new Set(urlsToTry)];
+
+                for (const url of uniqueUrls) {
+                    try {
+                        const candidateRes = await fetch(url);
+                        if (candidateRes && candidateRes.ok) {
+                            res = candidateRes;
+                            break;
+                        }
+                    } catch (e) {
+                        // ignore and try next
+                    }
+                }
+
+                if (!res) {
+                    console.warn('Scoreboard data fetch failed on all endpoints:', uniqueUrls);
+                    return;
+                }
+
                 const data = await res.json();
 
                 if (!data.success || !data.scoreboard) return;
@@ -694,14 +743,16 @@
                 handleWinnerAnnouncementOverlay(sb);
 
                 const currentJSON = JSON.stringify(sb);
-                if (currentJSON === lastSbDataJSON) {
+                const hasSpinner = document.querySelector('.spinner-border') !== null;
+                if (currentJSON === lastSbDataJSON && !hasSpinner) {
                     // Data has not changed - do not touch the DOM or reset screen state!
                     return;
                 }
 
-                const isInitial = !lastSbDataJSON;
+                const isInitial = !lastSbDataJSON || hasSpinner;
                 lastSbDataJSON = currentJSON;
                 window.currentScoreboardData = sb;
+
                 const titleHeaderEl = document.getElementById('festTitleHeader');
                 const typoWrapper = document.getElementById('festTypographyWrapper');
                 const typoImg = document.getElementById('festTypographyHeader');
@@ -717,9 +768,12 @@
                         titleHeaderEl.innerText = sb.festTitle || 'ATSA Arts Fest Scoreboard';
                     }
                 }
-                document.getElementById('festStatusBadge').innerHTML = `<i class="bi bi-trophy-fill me-1 text-warning"></i> ${sb.festStatus || 'LIVE SCOREBOARD'}`;
+                const festStatusBadge = document.getElementById('festStatusBadge');
+                if (festStatusBadge) {
+                    festStatusBadge.innerHTML = `<i class="bi bi-trophy-fill me-1 text-warning"></i> ${sb.festStatus || 'LIVE SCOREBOARD'}`;
+                }
 
-                updateGrandTotalVisibility(sb.showGrandTotal === true);
+                updateGrandTotalVisibility(sb.showGrandTotal !== false);
 
                 const festLogoImg = document.getElementById('festLogoHeader');
                 if (festLogoImg) {
@@ -1499,7 +1553,7 @@
                                 padding: 12,
                                 cornerRadius: 8,
                                 callbacks: {
-                                    label: function(context) {
+                                    label: function (context) {
                                         return ` Score: ${context.parsed.y} Points`;
                                     }
                                 }
@@ -1605,7 +1659,7 @@
 
         // Toggle Grand Total (Live Team Standings) visibility
         function updateGrandTotalVisibility(show) {
-            isGrandTotalEnabled = (show === true);
+            isGrandTotalEnabled = (show !== false);
             const grandTotalContainer = document.getElementById('scoreboardTeamsContainer');
             const grandTotalControls = document.getElementById('grandTotalHeaderControls');
             const grandTotalCard = document.getElementById('grandTotalChartCard');
@@ -1618,10 +1672,15 @@
                     grandTotalCard.style.setProperty('display', 'none', 'important');
                 }
             } else {
+                if (grandTotalContainer) {
+                    grandTotalContainer.style.removeProperty('display');
+                }
                 if (grandTotalControls) grandTotalControls.style.setProperty('display', 'flex', 'important');
                 applyGtViewMode(currentGtViewMode);
             }
         }
+
+
 
         // Export Bulk Scoreboard Data
         const exportFestDataBtn = document.getElementById('exportFestDataBtn');
@@ -1839,13 +1898,16 @@
         }
 
         // Toggle Native Browser Full Screen
-        document.getElementById('browserFullscreenBtn').addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => console.error(err));
-            } else {
-                document.exitFullscreen().catch(err => console.error(err));
-            }
-        });
+        const browserFullscreenBtnEl = document.getElementById('browserFullscreenBtn');
+        if (browserFullscreenBtnEl) {
+            browserFullscreenBtnEl.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => console.error(err));
+                } else {
+                    document.exitFullscreen().catch(err => console.error(err));
+                }
+            });
+        }
 
         // Initial Load & Auto-Refresh every 5 seconds for live stage LED screen updates
         fetchScoreboardData();
@@ -2186,9 +2248,7 @@
 
             return printHTML;
         }
-        }
     </script>
-
 </body>
 
 </html>

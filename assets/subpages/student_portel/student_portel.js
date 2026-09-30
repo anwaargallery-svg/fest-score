@@ -36,8 +36,13 @@ function getStudentProp(student, keys) {
 }
 
 const getApiUrl = (endpoint) => {
-    // Use relative paths for API calls. This works for both local and deployed environments.
-    // Example: /api/settings
+    if (window.location.protocol === 'file:' || !window.location.hostname) {
+        return `http://localhost:3000${endpoint}`;
+    }
+    if (window.location.port && window.location.port !== '3000' && window.location.port !== '80' && window.location.port !== '443') {
+        const host = window.location.hostname || 'localhost';
+        return `http://${host}:3000${endpoint}`;
+    }
     return endpoint;
 };
 

@@ -60,8 +60,13 @@ window.showSnackbar = function(message, undoCallback = null) {
 
 // Helper to handle local file vs server environments
 const getApiUrl = (endpoint) => {
-    // Use relative paths for API calls. This works for both local and deployed environments.
-    // Example: /api/settings
+    if (window.location.protocol === 'file:' || !window.location.hostname) {
+        return `http://localhost:3000${endpoint}`;
+    }
+    if (window.location.port && window.location.port !== '3000' && window.location.port !== '80' && window.location.port !== '443') {
+        const host = window.location.hostname || 'localhost';
+        return `http://${host}:3000${endpoint}`;
+    }
     return endpoint;
 };
 
@@ -1419,7 +1424,34 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!scoreboardSection) return;
 
         try {
-            const res = await fetch(getApiUrl('/api/scoreboard'));
+            let res = null;
+            const hostname = window.location.hostname || 'localhost';
+            const urlsToTry = [
+                getApiUrl('/api/scoreboard'),
+                `http://${hostname}:3000/api/scoreboard`,
+                'http://localhost:3000/api/scoreboard',
+                'http://127.0.0.1:3000/api/scoreboard',
+                '/api/scoreboard'
+            ];
+            const uniqueUrls = [...new Set(urlsToTry)];
+
+            for (const url of uniqueUrls) {
+                try {
+                    const candidateRes = await fetch(url);
+                    if (candidateRes && candidateRes.ok) {
+                        res = candidateRes;
+                        break;
+                    }
+                } catch (e) {
+                    // try next candidate
+                }
+            }
+
+            if (!res) {
+                scoreboardSection.style.display = 'none';
+                return;
+            }
+
             const data = await res.json();
             
             if (!data.success || !data.scoreboard) {
@@ -1439,6 +1471,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const isInitial = !lastFestScoreboardJSON;
             lastFestScoreboardJSON = currentJSON;
+            if (typeof renderTopPerformersModalData === 'function') renderTopPerformersModalData(sb.results || []);
 
             // If scoreboard is disabled by admin, hide the section gracefully
             if (sb.enabled === false) {
@@ -1481,6 +1514,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     liveDot.style.display = 'none';
                 }
             }
+
+            const isKpActive = (sb.showKalaprathibha === true);
+            const kpBtns = document.querySelectorAll('[data-bs-target="#topPerformersModal"]');
+            kpBtns.forEach(btn => {
+                if (btn.id === 'adminTopPerformersBtn' || btn.closest('#adminWrapper')) return;
+                btn.style.display = isKpActive ? 'inline-block' : 'none';
+            });
 
             // Render Teams / Houses Leaderboard
             const teams = sb.teams || [];
@@ -2250,3 +2290,305 @@ document.addEventListener('DOMContentLoaded', function() {
     window.renderGrandTotal2DChart = renderGrandTotal2DChart;
     setupGtViewToggleListeners();
 });
+
+// --- TOP PERFORMERS (KALAPRATHIBHA & CATEGORY CHAMPIONS) LOGIC ---
+function renderTopPerformersModalData(results) {
+    const kContainer = document.getElementById('kalaprathibhaContainer');
+    const cContainer = document.getElementById('categoryChampionsContainer');
+
+    if (!Array.isArray(results) || results.length === 0) {
+        const noDataHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-trophy text-muted opacity-50 display-1 d-block mb-3"></i>
+                <h5 class="fw-bold text-dark">No Published Event Results Yet</h5>
+                <p class="text-muted small">Top mark students and category champions will be automatically calculated once results are published.</p>
+            </div>
+        `;
+        if (kContainer) kContainer.innerHTML = noDataHTML;
+        if (cContainer) cContainer.innerHTML = noDataHTML;
+        renderTopStudentsTable([]);
+        return;
+    }
+
+    const studentMap = {};
+
+    const isInvalidWinner = (wName, wChest, wPts) => {
+        const n = String(wName || '').trim().toLowerCase();
+        const c = String(wChest || '').trim().toLowerCase();
+        const invalidSet = ['nil', 'no', 'none', 'no winner', 'not awarded', 'n/a', '-', '--', '---', 'null', 'undefined', 'not allotted', 'not given', 'empty', 'no prize', 'vacant', 'not applicable'];
+        if (wPts <= 0) return true;
+        if (!n && !c) return true;
+        if (invalidSet.includes(n) || invalidSet.includes(c)) return true;
+        if (n.startsWith('no winner') || n.startsWith('not awarded') || n.startsWith('not allotted') || n.startsWith('no prize')) return true;
+        return false;
+    };
+
+    const processWinner = (winner, placeStr, res) => {
+        if (!winner) return;
+        if (Array.isArray(winner)) {
+            winner.forEach(w => processWinner(w, placeStr, res));
+            return;
+        }
+        const name = String(winner.name || winner.studentName || winner.student || '').trim();
+        const chestNo = String(winner.chestNo || winner.code || '').trim();
+        const team = String(winner.team || winner.house || '').trim();
+        const points = Number(winner.points || 0);
+
+        if (isInvalidWinner(name, chestNo, points)) return;
+
+        const key = chestNo ? chestNo.toLowerCase() : `${name.toLowerCase()}|${team.toLowerCase()}`;
+
+        if (!studentMap[key]) {
+            studentMap[key] = {
+                key,
+                name: name || 'Chest #' + chestNo,
+                chestNo: chestNo || '-',
+                team: team || 'Unknown',
+                totalPoints: 0,
+                categoryPoints: {},
+                wins: [],
+                firstCount: 0,
+                secondCount: 0,
+                thirdCount: 0
+            };
+        }
+
+        const s = studentMap[key];
+        if (name && (!s.name || s.name.startsWith('Chest #'))) s.name = name;
+        if (chestNo && s.chestNo === '-') s.chestNo = chestNo;
+        if (team && s.team === 'Unknown') s.team = team;
+
+        s.totalPoints += points;
+
+        const category = res.category || 'General';
+        s.categoryPoints[category] = (s.categoryPoints[category] || 0) + points;
+
+        if (placeStr === 'FIRST') s.firstCount++;
+        else if (placeStr === 'SECOND') s.secondCount++;
+        else if (placeStr === 'THIRD') s.thirdCount++;
+
+        s.wins.push({
+            eventName: res.eventName || 'Unnamed Event',
+            category,
+            place: placeStr,
+            points
+        });
+    };
+
+    results.forEach(res => {
+        if (res.first) processWinner(res.first, 'FIRST', res);
+        if (res.second) processWinner(res.second, 'SECOND', res);
+        if (res.third) processWinner(res.third, 'THIRD', res);
+    });
+
+    const allStudents = Object.values(studentMap);
+
+    allStudents.sort((a, b) => {
+        if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+        if (b.firstCount !== a.firstCount) return b.firstCount - a.firstCount;
+        if (b.secondCount !== a.secondCount) return b.secondCount - a.secondCount;
+        return b.thirdCount - a.thirdCount;
+    });
+
+    window._cachedTopStudents = allStudents;
+
+    // --- 1. RENDER KALAPRATHIBHA (OVERALL PODIUM & LEADERBOARD) ---
+    if (kContainer) {
+        if (allStudents.length === 0) {
+            kContainer.innerHTML = '<div class="text-center py-4 text-muted">No student scores found.</div>';
+        } else {
+            const top3 = allStudents.slice(0, 3);
+            const podiumTitles = ['🥇 1st Rank (Kalaprathibha)', '🥈 2nd Rank (Runner-Up)', '🥉 3rd Rank (2nd Runner-Up)'];
+            const podiumBgs = [
+                'background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px solid #f59e0b;',
+                'background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 2px solid #94a3b8;',
+                'background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 2px solid #f97316;'
+            ];
+            const podiumBadgeColors = ['bg-warning text-dark', 'bg-secondary text-white', 'bg-danger text-white'];
+
+            let podiumHTML = '<div class="row g-3 justify-content-center mb-4">';
+            top3.forEach((student, idx) => {
+                const medalTitle = podiumTitles[idx] || `#${idx + 1} Rank`;
+                const cardStyle = podiumBgs[idx] || '';
+                const badgeColor = podiumBadgeColors[idx] || 'bg-primary text-white';
+
+                const winsListHTML = student.wins.map(w => {
+                    const placeColor = w.place === 'FIRST' ? 'text-warning' : (w.place === 'SECOND' ? 'text-secondary' : 'text-danger');
+                    return `
+                        <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light text-start small">
+                            <span><i class="bi bi-award-fill ${placeColor} me-1"></i>${w.eventName} <small class="text-muted">(${w.category})</small></span>
+                            <span class="fw-bold text-dark">+${w.points} pts</span>
+                        </div>
+                    `;
+                }).join('');
+
+                podiumHTML += `
+                    <div class="col-12 col-md-4">
+                        <div class="card h-100 shadow-sm rounded-4 text-center p-3 position-relative overflow-hidden" style="${cardStyle}">
+                            ${idx === 0 ? '<div class="position-absolute top-0 end-0 bg-warning text-dark fw-bold px-3 py-1 rounded-bottom-start small"><i class="bi bi-crown-fill me-1"></i>KALAPRATHIBHA</div>' : ''}
+                            <div class="mb-2">
+                                <span class="badge ${badgeColor} px-3 py-1.5 rounded-pill fw-bold text-uppercase fs-6 shadow-sm mb-2 d-inline-block">
+                                    ${medalTitle}
+                                </span>
+                                <h4 class="fw-extrabold text-dark mb-0 text-truncate" title="${student.name}">${student.name}</h4>
+                                ${student.chestNo && student.chestNo !== '-' ? `<span class="badge bg-dark text-white rounded-pill px-2.5 py-1 mt-1">Chest #${student.chestNo}</span>` : ''}
+                            </div>
+                            <div class="my-2">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-bold fs-5">
+                                    🏆 ${student.totalPoints} Total Points
+                                </span>
+                            </div>
+                            <div class="small fw-semibold text-muted mb-2">Team: <span class="badge bg-dark text-white">${student.team}</span></div>
+                            <div class="bg-white p-2 rounded-3 border shadow-xs mt-auto">
+                                <div class="fw-bold text-dark border-bottom pb-1 mb-1 small text-start"><i class="bi bi-trophy me-1"></i>Prizes Won (${student.wins.length}):</div>
+                                <div style="max-height: 140px; overflow-y: auto;">
+                                    ${winsListHTML}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            podiumHTML += '</div>';
+
+            kContainer.innerHTML = podiumHTML;
+        }
+    }
+
+    // --- 2. RENDER CATEGORY CHAMPIONS ---
+    if (cContainer) {
+        const categories = ['Sub-Junior', 'Junior', 'Senior', 'Super Senior', 'General', 'Group'];
+        results.forEach(r => {
+            if (r.category && !categories.includes(r.category)) {
+                categories.push(r.category);
+            }
+        });
+
+        let catHTML = '<div class="row g-3">';
+        let hasAnyCatChampion = false;
+
+        categories.forEach(cat => {
+            const catStudents = allStudents
+                .filter(s => (s.categoryPoints[cat] || 0) > 0)
+                .map(s => ({
+                    ...s,
+                    catPoints: s.categoryPoints[cat]
+                }))
+                .sort((a, b) => b.catPoints - a.catPoints);
+
+            if (catStudents.length > 0) {
+                hasAnyCatChampion = true;
+                const champ = catStudents[0];
+                const runnerUp = catStudents.length > 1 ? catStudents[1] : null;
+
+                catHTML += `
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden bg-white">
+                            <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
+                                <h6 class="fw-bold mb-0 text-warning text-uppercase d-flex align-items-center gap-1">
+                                    <i class="bi bi-tag-fill me-1"></i> ${cat} Category
+                                </h6>
+                                <span class="badge bg-warning text-dark fw-bold">CHAMPION</span>
+                            </div>
+                            <div class="card-body p-3 text-center bg-light-subtle">
+                                <div class="bg-warning-subtle border border-warning rounded-3 p-3 mb-2">
+                                    <div class="text-warning-emphasis fw-bold small mb-1"><i class="bi bi-crown-fill me-1"></i>CATEGORY CHAMPION</div>
+                                    <h5 class="fw-extrabold text-dark mb-1">${champ.name}</h5>
+                                    <div class="d-flex justify-content-center align-items-center gap-2 mb-2">
+                                        ${champ.chestNo && champ.chestNo !== '-' ? `<span class="badge bg-dark">Chest #${champ.chestNo}</span>` : ''}
+                                        <span class="badge bg-secondary">${champ.team}</span>
+                                    </div>
+                                    <span class="badge bg-success px-3 py-1.5 fs-6 fw-extrabold shadow-xs">
+                                        ⭐ ${champ.catPoints} Points in ${cat}
+                                    </span>
+                                </div>
+                                ${runnerUp ? `
+                                    <div class="p-2 border rounded bg-white text-start small">
+                                        <div class="text-muted fw-bold mb-1">🥈 Runner-Up:</div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="fw-semibold text-dark">${runnerUp.name} ${runnerUp.chestNo ? `<small class="text-muted">(#${runnerUp.chestNo})</small>` : ''}</span>
+                                            <span class="badge bg-secondary">${runnerUp.catPoints} pts</span>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        catHTML += '</div>';
+
+        if (!hasAnyCatChampion) {
+            cContainer.innerHTML = '<div class="text-center py-4 text-muted">No category winners recorded yet.</div>';
+        } else {
+            cContainer.innerHTML = catHTML;
+        }
+    }
+
+    // --- 3. RENDER ALL INDIVIDUAL STUDENTS RANKING TABLE ---
+    renderTopStudentsTable(allStudents);
+}
+
+function renderTopStudentsTable(studentList) {
+    const tBody = document.getElementById('topStudentsTableBody');
+    const countBadge = document.getElementById('topStudentsCountBadge');
+    if (countBadge) countBadge.innerText = `${studentList.length} Students Ranked`;
+
+    if (!tBody) return;
+
+    if (studentList.length === 0) {
+        tBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No students match your search.</td></tr>';
+        return;
+    }
+
+    let rowsHTML = '';
+    studentList.forEach((s, idx) => {
+        const rankMedal = idx === 0 ? '🥇 1st' : (idx === 1 ? '🥈 2nd' : (idx === 2 ? '🥉 3rd' : `#${idx + 1}`));
+        const rankClass = idx === 0 ? 'fw-extrabold text-warning fs-6' : (idx <= 2 ? 'fw-bold text-dark' : 'text-muted');
+
+        rowsHTML += `
+            <tr>
+                <td class="text-center ${rankClass}">${rankMedal}</td>
+                <td><span class="badge bg-dark text-white fw-mono">${s.chestNo || '-'}</span></td>
+                <td class="fw-bold text-dark">${s.name}</td>
+                <td><span class="badge bg-secondary-subtle text-dark border">${s.team}</span></td>
+                <td class="text-center fw-extrabold text-primary fs-6">${s.totalPoints} pts</td>
+                <td class="text-center">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fw-bold">
+                        ${s.wins.length} Wins
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+
+    tBody.innerHTML = rowsHTML;
+}
+
+function setupTopStudentSearchHandler() {
+    const searchInput = document.getElementById('topStudentSearchInput');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', (e) => {
+        const query = String(e.target.value || '').toLowerCase().trim();
+        const cached = window._cachedTopStudents || [];
+
+        if (!query) {
+            renderTopStudentsTable(cached);
+            return;
+        }
+
+        const filtered = cached.filter(s => {
+            return String(s.name || '').toLowerCase().includes(query) ||
+                   String(s.chestNo || '').toLowerCase().includes(query) ||
+                   String(s.team || '').toLowerCase().includes(query);
+        });
+
+        renderTopStudentsTable(filtered);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', setupTopStudentSearchHandler);
+setupTopStudentSearchHandler();

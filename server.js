@@ -33,6 +33,8 @@ if (fs.existsSync(dbPath)) {
 function getInitialScoreboard() {
   return {
     enabled: true,
+    showGrandTotal: true,
+    showKalaprathibha: false,
     festTitle: "ATSA Arts Fest 2026",
     festStatus: "Live",
     teams: [
@@ -664,6 +666,9 @@ app.get('/api/admin/data', (req, res) => {
 app.get('/api/scoreboard', (req, res) => {
   if (!db.scoreboard) {
     db.scoreboard = getInitialScoreboard();
+  }
+  if (db.scoreboard.showGrandTotal === undefined || db.scoreboard.showGrandTotal === false) {
+    db.scoreboard.showGrandTotal = true;
     saveDb();
   }
   recalculateScoreboardPoints();
@@ -672,7 +677,7 @@ app.get('/api/scoreboard', (req, res) => {
 
 // Admin: Update Scoreboard Settings
 app.post('/api/admin/scoreboard/settings', (req, res) => {
-  const { enabled, festTitle, festStatus, festLogo, festTypography, showGrandTotal } = req.body;
+  const { enabled, festTitle, festStatus, festLogo, festTypography, showGrandTotal, showKalaprathibha } = req.body;
   if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
   
   if (typeof enabled === 'boolean') db.scoreboard.enabled = enabled;
@@ -681,6 +686,7 @@ app.post('/api/admin/scoreboard/settings', (req, res) => {
   if (festLogo !== undefined) db.scoreboard.festLogo = festLogo;
   if (festTypography !== undefined) db.scoreboard.festTypography = festTypography;
   if (typeof showGrandTotal === 'boolean') db.scoreboard.showGrandTotal = showGrandTotal;
+  if (typeof showKalaprathibha === 'boolean') db.scoreboard.showKalaprathibha = showKalaprathibha;
   
   saveDb();
   res.json({ success: true, message: 'Scoreboard settings updated.', scoreboard: db.scoreboard });
@@ -862,7 +868,7 @@ app.get('/api/admin/scoreboard/export', (req, res) => {
 // Admin: Import Fest Scoreboard Bulk Data (JSON)
 app.post('/api/admin/scoreboard/import', (req, res) => {
   try {
-    const { teams, results, festTitle, festStatus, festLogo, showGrandTotal } = req.body;
+    const { teams, results, festTitle, festStatus, festLogo, showGrandTotal, showKalaprathibha } = req.body;
     if (!db.scoreboard) db.scoreboard = getInitialScoreboard();
 
     function findTeamByChest(chestNo, teamsList) {
@@ -930,6 +936,7 @@ app.post('/api/admin/scoreboard/import', (req, res) => {
     if (festLogo !== undefined) db.scoreboard.festLogo = festLogo;
     if (festTypography !== undefined) db.scoreboard.festTypography = festTypography;
     if (typeof showGrandTotal === 'boolean') db.scoreboard.showGrandTotal = showGrandTotal;
+    if (typeof showKalaprathibha === 'boolean') db.scoreboard.showKalaprathibha = showKalaprathibha;
 
     recalculateScoreboardPoints();
     saveDb();
