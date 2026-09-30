@@ -1485,11 +1485,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Render Teams / Houses Leaderboard
             const teams = sb.teams || [];
             window.allFestTeams = teams;
+
+            const grandTotalControls = document.getElementById('grandTotalHeaderControls');
+            const grandTotalCard = document.getElementById('grandTotalChartCard');
+
             if (teamsContainer) {
                 if (sb.showGrandTotal === false) {
                     teamsContainer.style.display = 'none';
+                    if (grandTotalControls) grandTotalControls.style.display = 'none';
+                    if (grandTotalCard) grandTotalCard.classList.add('d-none');
                 } else {
-                    teamsContainer.style.display = 'flex';
+                    if (grandTotalControls) grandTotalControls.style.display = 'flex';
                     if (teams.length === 0) {
                         teamsContainer.innerHTML = '<div class="col-12 text-center text-muted">No teams registered yet.</div>';
                     } else {
@@ -1526,6 +1532,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             `;
                         });
                         teamsContainer.innerHTML = teamsHTML;
+                    }
+                    if (typeof applyGtViewMode === 'function') {
+                        applyGtViewMode(currentGtViewMode);
                     }
                 }
             }
@@ -2029,4 +2038,188 @@ document.addEventListener('DOMContentLoaded', function() {
     if (urlParams.get('fullscreen') === 'true' || window.location.hash === '#fullscreen') {
         enterFullScreenMode();
     }
+
+    // --- Grand Total 2D Graph & Standings View Switcher System ---
+    let grandTotalChartInstance = null;
+    let currentGtViewMode = localStorage.getItem('gt_view_mode') || 'cards';
+
+    function adjustColorOpacity(hex, opacity) {
+        if (!hex || typeof hex !== 'string') return `rgba(59, 130, 246, ${opacity})`;
+        let c = hex.replace('#', '');
+        if (c.length === 3) c = c.split('').map(x => x + x).join('');
+        if (c.length !== 6) return `rgba(59, 130, 246, ${opacity})`;
+        const rgb = parseInt(c, 16);
+        const r = (rgb >> 16) & 0xff;
+        const g = (rgb >> 8) & 0xff;
+        const b = (rgb >> 0) & 0xff;
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+
+    function renderGrandTotal2DChart(teams) {
+        const canvas = document.getElementById('grandTotalChartCanvas');
+        if (!canvas || typeof Chart === 'undefined') return;
+
+        const ctx = canvas.getContext('2d');
+        const labels = teams.map(t => t.name || 'Team');
+        const points = teams.map(t => Number(t.points || 0));
+
+        const backgroundColors = teams.map(t => {
+            const color = t.color || '#3b82f6';
+            if (ctx) {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(1, adjustColorOpacity(color, 0.45));
+                return gradient;
+            }
+            return color;
+        });
+
+        const borderColors = teams.map(t => t.color || '#3b82f6');
+
+        const barValuePlugin = {
+            id: 'barValueLabels',
+            afterDatasetsDraw(chart) {
+                const { ctx } = chart;
+                chart.data.datasets.forEach((dataset, i) => {
+                    const meta = chart.getDatasetMeta(i);
+                    meta.data.forEach((bar, index) => {
+                        const value = dataset.data[index];
+                        ctx.save();
+                        ctx.fillStyle = '#0f172a';
+                        ctx.font = 'bold 13px Poppins, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(`${value} PTS`, bar.x, bar.y - 6);
+                        ctx.restore();
+                    });
+                });
+            }
+        };
+
+        if (grandTotalChartInstance) {
+            grandTotalChartInstance.data.labels = labels;
+            grandTotalChartInstance.data.datasets[0].data = points;
+            grandTotalChartInstance.data.datasets[0].backgroundColor = backgroundColors;
+            grandTotalChartInstance.data.datasets[0].borderColor = borderColors;
+            grandTotalChartInstance.update();
+        } else {
+            grandTotalChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Grand Total Points',
+                        data: points,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 2,
+                        borderRadius: 10,
+                        borderSkipped: false,
+                        barPercentage: 0.55,
+                        categoryPercentage: 0.7
+                    }]
+                },
+                plugins: [barValuePlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 25, bottom: 5, left: 10, right: 10 }
+                    },
+                    animation: {
+                        duration: 900,
+                        easing: 'easeOutQuart'
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                            titleFont: { size: 14, weight: 'bold', family: 'Poppins' },
+                            bodyFont: { size: 13, family: 'Poppins' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return ` Score: ${context.parsed.y} Points`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(226, 232, 240, 0.8)', drawBorder: false },
+                            ticks: { font: { family: 'Poppins', weight: '600' }, color: '#64748b' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Poppins', weight: '800', size: 13 }, color: '#1e293b' }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    function applyGtViewMode(mode) {
+        currentGtViewMode = mode;
+        localStorage.setItem('gt_view_mode', mode);
+
+        const cardsContainer = document.getElementById('scoreboardTeamsContainer');
+        const chartCard = document.getElementById('grandTotalChartCard');
+
+        const btnCards = document.getElementById('gtViewCardsBtn');
+        const btnGraph = document.getElementById('gtViewGraphBtn');
+        const btnBoth = document.getElementById('gtViewBothBtn');
+
+        [btnCards, btnGraph, btnBoth].forEach(btn => {
+            if (btn) {
+                btn.classList.remove('active', 'btn-dark');
+                btn.classList.add('btn-outline-dark');
+            }
+        });
+
+        if (mode === 'cards') {
+            if (cardsContainer) cardsContainer.style.display = 'flex';
+            if (chartCard) chartCard.classList.add('d-none');
+            if (btnCards) {
+                btnCards.classList.add('active', 'btn-dark');
+                btnCards.classList.remove('btn-outline-dark');
+            }
+        } else if (mode === 'graph') {
+            if (cardsContainer) cardsContainer.style.display = 'none';
+            if (chartCard) chartCard.classList.remove('d-none');
+            if (btnGraph) {
+                btnGraph.classList.add('active', 'btn-dark');
+                btnGraph.classList.remove('btn-outline-dark');
+            }
+            if (window.allFestTeams && window.allFestTeams.length > 0) {
+                renderGrandTotal2DChart(window.allFestTeams);
+            }
+        } else if (mode === 'both') {
+            if (cardsContainer) cardsContainer.style.display = 'flex';
+            if (chartCard) chartCard.classList.remove('d-none');
+            if (btnBoth) {
+                btnBoth.classList.add('active', 'btn-dark');
+                btnBoth.classList.remove('btn-outline-dark');
+            }
+            if (window.allFestTeams && window.allFestTeams.length > 0) {
+                renderGrandTotal2DChart(window.allFestTeams);
+            }
+        }
+    }
+
+    function setupGtViewToggleListeners() {
+        const btnCards = document.getElementById('gtViewCardsBtn');
+        const btnGraph = document.getElementById('gtViewGraphBtn');
+        const btnBoth = document.getElementById('gtViewBothBtn');
+
+        if (btnCards) btnCards.onclick = () => applyGtViewMode('cards');
+        if (btnGraph) btnGraph.onclick = () => applyGtViewMode('graph');
+        if (btnBoth) btnBoth.onclick = () => applyGtViewMode('both');
+    }
+
+    window.applyGtViewMode = applyGtViewMode;
+    window.renderGrandTotal2DChart = renderGrandTotal2DChart;
+    setupGtViewToggleListeners();
 });

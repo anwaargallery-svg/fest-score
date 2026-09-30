@@ -16,6 +16,7 @@
                    img-src 'self' data:; 
                    font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com;
                    connect-src 'self';">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script defer src="assets/script.js"></script>
   <script defer src="https://code.jquery.com/jquery-4.0.0.js"
     integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U=" crossorigin="anonymous"></script>
@@ -97,11 +98,47 @@
           <p class="text-muted small mb-0" id="festSubtitle">Live Team Standings & Event Results</p>
         </div>
 
+        <!-- Live Team Standings Controls & Views (Cards / 2D Graph / Both) -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 px-1" id="grandTotalHeaderControls" data-aos="fade-up">
+          <div class="d-flex align-items-center gap-2">
+            <h5 class="fw-extrabold mb-0 text-dark text-uppercase d-flex align-items-center gap-2" style="font-size: 1.1rem;">
+              <i class="bi bi-bar-chart-line-fill text-success"></i> Live Team Standings (Grand Total)
+            </h5>
+          </div>
+
+          <div class="btn-group btn-group-sm shadow-sm rounded-pill overflow-hidden border bg-white p-1" role="group" id="gtViewToggleGroup">
+            <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 fw-bold active" id="gtViewCardsBtn" title="Cards View">
+              <i class="bi bi-grid-fill me-1"></i> Cards
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-dark border-0 rounded-pill px-3 fw-bold" id="gtViewGraphBtn" title="2D Graph View">
+              <i class="bi bi-bar-chart-fill me-1"></i> 2D Graph
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-dark border-0 rounded-pill px-3 fw-bold" id="gtViewBothBtn" title="Both Cards & Graph">
+              <i class="bi bi-layout-split me-1"></i> Both
+            </button>
+          </div>
+        </div>
+
         <!-- Team Leaderboard Standings Grid -->
         <div class="row g-3 justify-content-center mb-4" id="scoreboardTeamsContainer" data-aos="fade-up">
           <div class="col-12 text-center text-muted py-4">
             <div class="spinner-border text-success" role="status"></div>
             <p class="mt-2 small">Loading Team Standings...</p>
+          </div>
+        </div>
+
+        <!-- 2D Graph View Card Container -->
+        <div class="card shadow-sm border rounded-3 p-4 mb-4 bg-white d-none" id="grandTotalChartCard" data-aos="fade-up">
+          <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+            <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+              <i class="bi bi-graph-up-arrow text-success"></i> Grand Total 2D Team Standings Chart
+            </h6>
+            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-bold small">
+              <i class="bi bi-lightning-charge-fill me-1"></i>Live Updates
+            </span>
+          </div>
+          <div style="position: relative; height: 350px; width: 100%;">
+            <canvas id="grandTotalChartCanvas"></canvas>
           </div>
         </div>
 
